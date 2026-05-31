@@ -211,4 +211,87 @@ ________________
          3. “Special promotion available”
          4. “Alex accepted your training request.”
          5. “5 people are currently looking for a workout partner nearby.”
-         6. “A Spotlight Trainer is available at [Gym Name].”
+         6. “A Spotlight Trainer is available at [Gym Name].”**Project Title:** GYMatch - MVP (Minimum Viable Product)
+
+**Date:** 2026-05-31
+
+**1. Introduction**
+The GYMatch mobile application aims to connect fitness enthusiasts with compatible workout partners, personal trainers, and fitness classes. This document outlines the scope for the Minimum Viable Product (MVP), focusing on core functionalities required to validate the market need and gather initial user feedback.
+
+**2. Goals of the MVP**
+*   To enable users to create profiles detailing their fitness goals and preferences.
+*   To provide a mechanism for users to find and connect with suitable workout partners.
+*   To allow users to discover and communicate with personal trainers and fitness classes.
+*   To establish a foundation for future feature expansion.
+
+**3. In-Scope Features (MVP - Phase 1)**
+
+**3.1. User Management & Profiles**
+    *   **User Registration & Login:** Email/password registration, basic profile creation.
+    *   **Profile Editing:** Users can update their basic info (name, age, gender) and fitness details (goals, workout types, availability, preferred gym/location).
+    *   **Profile Viewing:** Ability to view other users' public profiles.
+    *   **Privacy Settings:** Basic control over profile visibility (e.g., public/private for certain fields).
+
+**3.2. Partner Matching & Discovery**
+    *   **Basic Matching Algorithm:** Suggests partners based on selected common criteria (e.g., fitness goals, workout types, availability, proximity).
+    *   **Browse & Filter:** Users can browse a list of potential partners and apply filters (e.g., age range, gender, specific fitness goals, location).
+    *   **Connection Requests:** Users can send and receive requests to connect.
+    *   **Connection Management:** View list of connections, accept/decline requests.
+
+**3.3. Messaging**
+    *   **Direct Messaging:** One-on-one text-based chat functionality between connected users.
+    *   **Message Notifications:** Real-time notifications for new messages.
+
+**3.4. Trainer & Class Discovery**
+    *   **Trainer/Gym Profiles:** Basic profiles for trainers and fitness centers, including services offered, specialization, and contact info.
+    *   **Class Listings:** Display of available fitness classes with schedules and basic descriptions.
+    *   **Search & Filter:** Users can search and filter for trainers or classes by specialization, location, type, or availability.
+
+**3.5. Notifications**
+    *   **In-app Notifications:** For connection requests, accepted connections, and new messages.
+
+**4. Out-of-Scope Features (for MVP)**
+*   In-app booking and payment for trainers/classes.
+*   Advanced group workout creation and management.
+*   Progress tracking, analytics, and performance dashboards.
+*   Integration with wearable devices (e.g., Fitbit, Apple Watch).
+*   Advanced AI-powered recommendation engine.
+*   Social feed functionality (sharing achievements, posts).
+*   Video/voice calls.
+*   Complex rating and review system (basic feedback might be considered later in MVP, but not a core feature).
+*   Multiple gym affiliations per user.
+
+**5. Technical Considerations (Overview)**
+*   **Platform:** iOS and Android (via React Native).
+*   **Backend:** RESTful API.
+*   **Database:** Flexible NoSQL database.
+*   **Authentication:** Secure user authentication.
+
+**6. Deliverables**
+*   Functional mobile application for iOS and Android platforms.
+*   API documentation for backend services.
+*   Basic user guide.
+*   Deployment to respective app stores (pending review and approval processes).
+
+**7. Success Metrics**
+*   Number of new user registrations.
+*   Percentage of users completing profile setup.
+*   Number of successful connections established.
+*   Average daily/monthly active users (DAU/MAU).
+*   User feedback and satisfaction (qualitative).
+
+**8. Assumptions & Constraints**
+*   Availability of a dedicated development team.
+*   Access to necessary third-party APIs (e.g., maps, push notifications).
+*   Compliance with platform guidelines (Apple App Store, Google Play Store).
+*   Initial focus on core functionality to gather user feedback quickly.
+*   Budget and timeline considerations for MVP development.
+
+**9. Stakeholders**
+*   Product Owner/Project Manager
+*   Development Team (Frontend, Backend, QA)
+*   UI/UX Designer
+*   End Users (beta testers)
+*   Fitness Professionals/Gyms (initial partners)
+
+This MVP scope will guide the initial development phase, allowing for agile iteration based on user feedback and market response.
