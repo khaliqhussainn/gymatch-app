@@ -1,35 +1,27 @@
-const mongoose = require('mongoose');
+const { getPool } = require('../config/db');
 
-const UserSchema = new mongoose.Schema({
-    name: {
-        type: String,
-        required: true
+const User = {
+    async findAll() {
+        const pool = getPool();
+        const [rows] = await pool.query('SELECT id, name, email, date FROM users');
+        return rows;
     },
-    email: {
-        type: String,
-        required: true,
-        unique: true
+
+    async findByEmail(email) {
+        const pool = getPool();
+        const [rows] = await pool.query('SELECT * FROM users WHERE email = ?', [email]);
+        return rows[0];
     },
-    password: {
-        type: String,
-        required: true
-    },
-    date: {
-        type: Date,
-        default: Date.now
+
+    async create(name, email, password) {
+        const pool = getPool();
+        const [result] = await pool.query(
+            'INSERT INTO users (name, email, password) VALUES (?, ?, ?)',
+            [name, email, password]
+        );
+        return { id: result.insertId, name, email };
     }
-    // Add more fields as per your GYMatch MVP Scope, e.g.,
-    // fitnessGoals: [String],
-    // preferredWorkoutTypes: [String],
-    // availability: [String],
-    // preferredGym: {
-    //     type: mongoose.Schema.Types.ObjectId,
-    //     ref: 'gym'
-    // },
-    // location: {
-    //     type: { type: String, default: 'Point' },
-    //     coordinates: [Number] // [longitude, latitude]
-    // }
-});
+    // Add more user-related database operations here (e.g., findById, update, delete)
+};
 
-module.exports = mongoose.model('User', UserSchema);
+module.exports = User;
