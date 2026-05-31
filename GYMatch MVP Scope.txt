@@ -1,0 +1,214 @@
+﻿GYMatch - MVP Product Overview
+GYMatch is a real-time location-based gym discovery and training partner platform that automatically detects a user's current location and instantly displays nearby gyms without requiring manual location input.
+Beyond gym discovery, GYMatch introduces a lightweight social utility layer that allows users to find workout partners currently training at specific gym locations.
+The platform is designed to bridge the gap between:
+“I need a gym.”
+and
+“I’m training with a partner.”
+The long-term vision is to build a scalable fitness ecosystem where gyms, trainers, and fitness communities connect through real-time location intelligence and social engagement.
+________________
+Phase 1 Objective
+The primary objective of Phase 1 is to build a polished MVP (Minimum Viable Product) that demonstrates:
+* Real-time nearby gym discovery
+* Lightweight social matching functionality
+* User engagement through workout partner discovery
+* Investor-ready product positioning
+* Scalable monetization opportunities
+The MVP will focus on creating a seamless experience where users can:
+* Discover gyms nearby
+* Find active workout partners (Dummy)
+* Send training invitations
+* Engage through lightweight social interaction
+________________
+Phase 1 User Roles
+For the MVP, only 3 core user roles are necessary.
+________________
+
+
+
+1. Guest - A user who opens the app without creating an account. (default experience)
+   1. Permission
+      1. Allow location access
+      2. Browse nearby gyms
+      3. View gyms on the map
+      4. Open gym details
+      5. Search gyms
+      6. Apply filters
+      7. View directions
+   2. Guest-to-Member Conversion Strategy - If a guest user attempts to use the “Find Workout Partner” feature, the app will trigger a signup modal.
+      1. Example: “Unlock the GYMatch community. Sign up to see who is training at this gym right now.”
+      2. Gym detail pages may also display: “32 people are currently looking for a workout partner here.” (Dummy Data)
+2. Registered User - A user who signs up using:
+   1. Permission - Create and edit profile, Save favorite gyms
+   2. Purpose - Adds engagement and retention features.
+   3. Signup with - Email, Google
+   4. Features
+      1. Activate “Find Workout Partner” mode
+      2. Create training preferences
+      3. View active gym partner feed (Dummy)
+      4. Send training invitations
+      5. Accept/reject training requests
+      6. Participate in temporary training chats
+      7. Block/report users 
+3. Super Admin - The platform administrator manages the system, like Manage users and Manage categories
+________________
+MOBILE APP SCREEN BREAKDOWN
+________________
+
+
+   1. Splash Screen - Brand introduction while the app initializes.
+   2. Onboarding Screens (2-3 Screens) - Quickly explain the app concept.
+   1. Features
+   1. Nearby gym discovery explanation
+   2. Real-time location concept
+   3. Benefits of the platform
+   4. CTA buttons
+   3. Location Permission Screen - Request GPS/location access.
+   1. Features
+   1. Permission explanation
+   2. “Allow Location Access”
+   3. Fallback option
+   4. Home Screen (Main Screen) - Core app experience, MOST IMPORTANT screen.
+   1. Features
+   1. Nearby Gym Feed - Automatically shows gyms near the user.
+   2. Dynamic Location Detection - If the user travels:
+   1. UK → shows UK gyms
+   2. USA → shows USA gyms
+   3. Featured Gyms Section - Highlighted gyms.
+   4. Search Bar - Quick search access.
+   5. Categories - Gym, CrossFit, Women Only, Yoga, MMA
+   6. Quick Filters - Open now, Nearby, Top rated
+   5. Map Screen - Interactive map-based discovery.
+   1. Features
+   1. Live Map - Interactive map with gym markers.
+   2. Nearby Pins - Shows nearby gyms visually.
+   3. Dynamic Radius Loading - Updates based on user movement.
+   4. Tap Marker - Open mini gym preview.
+   5. Directions Button - Open navigation apps.
+
+      6. Gym Details Screen - Detailed information about a gym.
+      1. Features
+      1. Gym Information - Name, Address, Distance, Timings, Contact info
+      2. Gallery - Gym photos.
+      3. Amenities - Example: Parking, Cardio, Sauna, Personal training
+      4. Action Buttons - Call, Directions, Save, Share
+      5. Ratings - Basic star rating display.
+      2. Partner Feed Section - Allow users to discover active workout partners currently available at that gym. (Dummy)
+      1. Features
+      1. “Find Workout Partner” toggle
+      2. Active user feed
+      3. Workout preferences display
+      4. Experience level display
+      5. Invite to Train button
+      6. Temporary active status
+      7. Sponsored/Spotlight trainer listings 
+      2. Privacy Features
+      1. No exact user location sharing
+      2. Users only appear as active within that gym
+      3. Block/report functionality 
+      3. Active Partner Widget
+      1. Example: “3 people are currently looking for a workout partner here.”
+      2. Partner Feed Preview
+      3. Displays active users available for training.
+      4. Spotlight Trainers
+      5. Promoted trainers are shown on the gym page. 
+      7. Search Screen - Manual gym discovery.
+      1. Features
+      1. Search by Name - Search gyms instantly.
+      2. Suggested Searches - Popular gyms/categories.
+      3. Search History - Recent searches.
+      8. Filter Screen - Improve search precision.
+      1. Features
+      1. Distance Filter - 1km / 5km / 10km
+      2. Rating Filter - 4+ ratings, etc.
+      3. Category Filter - Gym, Yoga, MMA, CrossFit, 
+      4. Open Now Filter - Real-time availability.
+      9. Favorites Screen - Allow users to save gyms.
+      1. Features
+      1. Saved Gyms List - Quick access to favorite gyms.
+      2. Recently Viewed - History tracking.
+      3. Note: Access is available only to logged-in users.
+
+         10. Authentication Screens
+         1. Includes
+         1. Login Screen
+         2. Signup Screen
+         3. Forgot Password Screen
+         2. Features
+         1. Authentication Methods - Email, Google
+         2. Guest Mode - Continue without login.
+         11. User Profile Screen
+         1. Features
+         1. User Information - Name, Email, Profile image
+         2. Saved Gyms - Quick access.
+         3. Settings - Preferences and permissions.
+         4. Logout
+         12. Training Thread Screen - Provide temporary lightweight chat functionality between matched users. 
+         1. Features
+         1. Temporary conversation thread
+         2. Invite acceptance flow
+         3. Training coordination
+         4. Safety tools
+         5. Block/report button
+         6. Auto-expiring conversations 
+Note: This is intentionally lightweight and not a full social messaging system. 
+________________
+ADMIN PANEL (PHASE 1)
+________________
+
+
+         1. Admin Login
+         2. Dashboard Overview - Total gyms, Total users, Active users, Most viewed gyms
+         3. Gym Management Screen
+         1. Features
+         1. Add Gym, Edit Gym, Delete Gym
+         2. Manage: Images, Address, Coordinates, Amenities, Categories
+         4. User Management Screen
+         1. Features - View Users, Suspend Users, Basic moderation
+         5. Category Management - Gym categories, Tags, Amenities
+________________
+
+
+PHASE 1 CORE FEATURES EXPLAINED
+________________
+
+
+         1. Real-Time Geolocation Engine - Automatically detect user location.
+         1. How It Works
+         1. Step 1 - App requests GPS permission.
+         2. Step 2 - Mobile device returns coordinates.
+         3. Step 3 - Backend searches nearby gyms.
+         4. Step 4 - Gyms displayed instantly.
+________________
+
+
+Why This Matters
+This is the CORE differentiator. Without this feature, GYMatch loses its uniqueness.
+________________
+
+
+         2. Nearby Gym Discovery Engine - Find gyms near the user.
+         1. How It Works
+         1. Backend uses: Latitude, Longitude, Radius queries
+         2. Then sorts results by: Distance, Popularity, Ratings
+         3. Interactive Maps - Visual exploration experience.
+         4. Smart Search System - Allow users to quickly discover gyms.
+         5. Favorites System - Increase retention and engagement.
+         6. Workout Partner Matching System - Allow users to find compatible workout partners currently active at a gym. 
+         1. How It Works 
+         1. Step 1 - User enables “Find Workout Partner” mode.
+         2. Step 2 - The user appears in the active partner feed for that gym.
+         3. Step 3 - Users are matched based on:
+         1. Workout style
+         2. Training preferences
+         3. Experience level
+         4. Step 4 - Users can send “Invite to Train” requests.
+         5. Step 5 - Accepted requests open a temporary training thread. 
+         7. Notifications System - Re-engage users.
+         1. Example Notifications
+         1. “A new gym opened near you.”
+         2. “Top-rated gym nearby.”
+         3. “Special promotion available”
+         4. “Alex accepted your training request.”
+         5. “5 people are currently looking for a workout partner nearby.”
+         6. “A Spotlight Trainer is available at [Gym Name].”
