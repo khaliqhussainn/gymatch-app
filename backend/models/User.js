@@ -1,27 +1,41 @@
-const { getPool } = require('../config/db');
+const pool = require('../config/connection');
 
-const User = {
-    async findAll() {
-        const pool = getPool();
-        const [rows] = await pool.query('SELECT id, name, email, date FROM users');
-        return rows;
-    },
+class User {
+  static async findByEmail(email) {
+    const [rows] = await pool.query('SELECT * FROM users WHERE email = ?', [email]);
+    return rows[0];
+  }
 
-    async findByEmail(email) {
-        const pool = getPool();
-        const [rows] = await pool.query('SELECT * FROM users WHERE email = ?', [email]);
-        return rows[0];
-    },
+  static async create({ email, password, role = 'user' }) {
+    const [result] = await pool.query(
+      'INSERT INTO users (email, password, role) VALUES (?, ?, ?)',
+      [email, password, role]
+    );
+    return { id: result.insertId, email, role };
+  }
 
-    async create(name, email, password) {
-        const pool = getPool();
-        const [result] = await pool.query(
-            'INSERT INTO users (name, email, password) VALUES (?, ?, ?)',
-            [name, email, password]
-        );
-        return { id: result.insertId, name, email };
+  static async createWithGoogle({ email, googleId, role = 'user' }) {
+    const [result] = await pool.query(
+      'INSERT INTO users (email, google_id, role) VALUES (?, ?, ?)',
+      [email, googleId, role]
+    );
+    return { id: result.insertId, email, role };
+  }
+
+  static async findOrCreateGoogleUser(profile) {
+    const { id, emails, displayName } = profile;
+    const email = emails[0].value;
+    
+    let user = await this.findByEmail(email);
+    if (!user) {
+      user = await this.createWithGoogle({ 
+        email, 
+        googleId: id,
+        name: displayName
+      });
     }
-    // Add more user-related database operations here (e.g., findById, update, delete)
-};
+    return user;
+  }
+}
 
 module.exports = User;

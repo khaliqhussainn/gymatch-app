@@ -1,17 +1,24 @@
--- GYMatch MVP Database Setup Script
--- Run this in phpMyAdmin or MySQL command line
-
-CREATE DATABASE IF NOT EXISTS gymatch_mvp;
-
-USE gymatch_mvp;
-
-CREATE TABLE IF NOT EXISTS users (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    email VARCHAR(255) UNIQUE NOT NULL,
-    password VARCHAR(255) NOT NULL,
-    date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
 -- Verify tables were created
 SHOW TABLES;
+CREATE DATABASE IF NOT EXISTS gymatch_db;
+USE gymatch_db;
+
+CREATE TABLE users (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  email VARCHAR(255) UNIQUE NOT NULL,
+  password VARCHAR(255) NOT NULL,
+  google_id VARCHAR(255) UNIQUE,
+  role ENUM('guest', 'user', 'admin') DEFAULT 'user',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE profiles (
+  user_id INT PRIMARY KEY,
+  name VARCHAR(255),
+  age INT,
+  gender ENUM('male', 'female', 'other'),
+  fitness_goals TEXT,
+  workout_types TEXT,
+  availability TEXT,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);

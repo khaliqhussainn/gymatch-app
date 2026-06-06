@@ -1,71 +1,305 @@
-# GYMatch Project Brief
+Based on your comprehensive GYMatch MVP scope, I'll outline the complete user flow with technical implementation details:
 
-## Project Goal
-To develop a mobile application named "GYMatch" that connects gym-goers with compatible workout partners, personal trainers, and fitness classes. The application aims to enhance the fitness journey of individuals by fostering a supportive community and providing personalized recommendations based on fitness goals, preferences, and availability.
+### Core Application Flow
 
-## Target Audience
-Individuals aged 18-65 who are interested in fitness, including:
-- Regular gym-goers looking for workout partners.
-- Newcomers to fitness seeking guidance from trainers or group classes.
-- People looking for specific fitness classes (e.g., yoga, CrossFit, HIIT).
-- Fitness professionals (personal trainers, class instructors) looking to expand their client base.
+1. **Initial Launch Sequence**
+```mermaid
+graph TD
+    A[Splash Screen] --> B[Onboarding Screens]
+    B --> C[Location Permission]
+    C --> D{Location Granted?}
+    D -->|Yes| E[Home Screen]
+    D -->|No| F[Limited Functionality Mode]
+```
 
-## Core Features (MVP - Phase 1)
+2. **Guest User Flow**
+```mermaid
+graph TD
+    G[Guest User] --> H[Browse Nearby Gyms]
+    H --> I[View on Map]
+    H --> J[Search/Filters]
+    H --> K[Gym Details]
+    K --> L{Attempt Partner Feature?}
+    L -->|Yes| M[Signup Modal]
+    L -->|No| N[Continue Browsing]
+```
 
-### User Profiles
-- **Creation:** Users can create profiles with basic information (name, age, gender, location).
-- **Fitness Details:** Users can specify fitness goals (e.g., weight loss, muscle gain, endurance), preferred workout types (e.g., strength training, cardio, yoga), availability, and preferred gym/location.
-- **Privacy Settings:** Options to control visibility of profile information.
+3. **Registered User Flow**
+```mermaid
+graph TD
+    O[Registered User] --> P[Home Screen]
+    P --> Q[Find Gyms]
+    P --> R[Save Favorites]
+    P --> S[Update Profile]
+    T[Gym Details] --> U[Toggle Partner Mode]
+    U --> V[Appear in Feed]
+    V --> W[Receive Invites]
+    W --> X{Accept?}
+    X -->|Yes| Y[Temporary Chat]
+    X -->|No| Z[Continue Browsing]
+```
 
-### Partner Matching
-- **Algorithm:** A basic matching algorithm that suggests potential workout partners based on shared fitness goals, workout types, availability, and proximity.
-- **Browse/Filter:** Users can browse profiles and apply filters (e.g., gender, age range, specific gym, trainer, class type).
-- **Connect/Request:** Users can send connection requests to other users.
+### Technical Implementation Plan
 
-### Messaging
-- **In-app Chat:** A simple direct messaging system to communicate with matched partners or trainers.
+**1. Authentication System**
+```javascript
+// backend/controllers/authController.js
+const googleAuth = async (req, res) => {
+  const { token } = req.body;
+  const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+  
+  try {
+    const ticket = await client.verifyIdToken({
+      idToken: token,
+      audience: process.env.GOOGLE_CLIENT_ID
+    });
+    
+    const payload = ticket.getPayload();
+    let user = await User.findOne({ email: payload.email });
+    
+    if (!user) {
+      user = new User({
+        email: payload.email,
+        googleId: payload.sub,
+        role: 'user'
+      });
+      await user.save();
+    }
+    
+    const jwtToken = generateJWT(user);
+    res.json({ token: jwtToken });
+  } catch (error) {
+    res.status(400).json({ error: 'Authentication failed' });
+  }
+};
+```
 
-### Trainer/Class Discovery
-- **Listings:** Trainers and fitness centers can list their profiles, services, class schedules, and pricing.
-- **Search/Filter:** Users can search and filter for trainers or classes based on specialization, location, ratings, and availability.
+**2. Real-time Location Handling**
+```javascript
+// frontend/services/locationService.js
+const getLocation = async () => {
+  try {
+    const { status } = await Permissions.askAsync(Permissions.LOCATION);
+    
+    if (status !== 'granted') {
+      throw new Error('Location permission denied');
+    }
+    
+    const location = await Location.getCurrentPositionAsync({
+      accuracy: Location.Accuracy.High
+    });
+    
+    return {
+      lat: location.coords.latitude,
+      lng: location.coords.longitude
+    };
+  } catch (error) {
+    // Handle fallback to IP-based location
+    const ipLocation = await fetchIPLocation();
+    return ipLocation;
+  }
+};
+```
 
-### Notifications
-- **Connection Requests:** Notifications for new connection requests.
-- **Messages:** Notifications for new messages.
+**3. Gym Discovery Engine**
+```javascript
+// backend/services/gymService.js
+const findNearbyGyms = async (lat, lng, radius = 5) => {
+  const gyms = await Gym.aggregate([
+    {
+      $geoNear: {
+        near: { type: 'Point', coordinates: [lng, lat] },
+        distanceField: 'distance',
+        maxDistance: radius * 1000,
+        spherical: true
+      }
+    },
+    {
+      $project: {
+        name: 1,
+        address: 1,
+        amenities: 1,
+        rating: 1,
+        distance: { $round: ['$distance', 2] }
+      }
+    },
+    { $sort: { distance: 1 } }
+  ]);
+  
+  return gyms;
+};
+```
 
-## Technology Stack (Proposed)
-- **Frontend:** React Native (for cross-platform compatibility)
-- **Backend:** Node.js with Express.js (for RESTful API)
-- **Database:** MongoDB (NoSQL for flexibility with user profiles)
-- **Authentication:** JWT (JSON Web Tokens)
-- **Location Services:** Google Maps API / Apple MapKit
+**4. Partner Matching System**
+```javascript
+// backend/services/matchingService.js
+const findPotentialPartners = async (gymId, userPreferences) => {
+  // For MVP - Dummy implementation
+  const DUMMY_PARTNERS = [
+    {
+      id: '1',
+      name: 'Alex',
+      experience: 'Intermediate',
+      preferences: ['Weightlifting', 'Cardio'],
+      active: true
+    },
+    {
+      id: '2',
+      name: 'Taylor',
+      experience: 'Advanced',
+      preferences: ['Yoga', 'Pilates'],
+      active: true
+    }
+  ];
+  
+  return DUMMY_PARTNERS.filter(partner => 
+    partner.preferences.some(pref => 
+      userPreferences.includes(pref)
+    )
+  );
+};
+```
 
-## Success Metrics
-- User acquisition and retention rates.
-- Number of successful matches and connections.
-- User engagement (e.g., frequency of app usage, messages sent).
-- Positive user feedback and ratings.
+**5. Temporary Chat System**
+```javascript
+// backend/models/ChatSession.js
+const chatSessionSchema = new mongoose.Schema({
+  participants: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  }],
+  gym: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Gym'
+  },
+  expiresAt: {
+    type: Date,
+    default: () => new Date(Date.now() + 24 * 60 * 60 * 1000) // 24h expiration
+  },
+  messages: [{
+    sender: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    content: String,
+    timestamp: { type: Date, default: Date.now }
+  }]
+});
 
-## Future Enhancements (Phase 2 & beyond)
-- In-app booking and payment for trainers/classes.
-- Group workout creation and management.
-- Progress tracking and analytics.
-- Integration with wearables (e.g., Fitbit, Apple Watch).
-- Advanced AI-powered matching and personalized recommendations.
-- Social feed for sharing progress and achievements.
+// Auto-expire implementation
+chatSessionSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
+```
 
-## Deliverables
-- Functional MVP mobile application (iOS & Android).
-- API Documentation.
-- User Guide.
-- Deployment to App Store & Google Play Store.
+### Security & Privacy Implementation
 
-## Key Stakeholders
-- Project Manager
-- UI/UX Designer
-- Frontend Developers
-- Backend Developers
-- QA Testers
-- Marketing Team
-- Potential Users
-- Fitness Professionals
+1. **Location Privacy Protection**
+```javascript
+// backend/middleware/locationMiddleware.js
+const generalizeLocation = (lat, lng) => {
+  // Reduce precision to ~100m radius
+  return {
+    lat: parseFloat(lat.toFixed(3)),
+    lng: parseFloat(lng.toFixed(3))
+  };
+};
+
+app.use('/api/gyms', (req, res, next) => {
+  if (req.user && req.query.lat && req.query.lng) {
+    req.query.lat = parseFloat(req.query.lat).toFixed(3);
+    req.query.lng = parseFloat(req.query.lng).toFixed(3);
+  }
+  next();
+});
+```
+
+2. **Role-Based Access Control**
+```javascript
+// backend/middleware/authMiddleware.js
+const requireRole = (roles) => {
+  return (req, res, next) => {
+    if (!roles.includes(req.user.role)) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+    next();
+  };
+};
+
+// Usage in routes
+router.get('/admin/users', 
+  auth, 
+  requireRole(['admin']), 
+  adminController.getUsers
+);
+```
+
+### Admin Panel Flow
+
+```mermaid
+graph TD
+    AA[Admin Login] --> AB[Dashboard]
+    AB --> AC[Gym Management]
+    AB --> AD[User Management]
+    AB --> AE[Category Management]
+    AC --> AF[Add/Edit Gyms]
+    AD --> AG[View/Suspend Users]
+    AE --> AH[Manage Categories]
+```
+
+### Implementation Timeline
+
+1. **Week 1-2**: Core Infrastructure & Authentication
+   - User model with roles
+   - Google/Email auth
+   - Session management
+   - Security middleware
+
+2. **Week 3-4**: Location & Gym Systems
+   - Real-time geolocation
+   - Gym database model
+   - Map integration (Google Maps/Mapbox)
+   - Search/filter functionality
+
+3. **Week 5-6**: Social Features
+   - Partner matching system
+   - Invitation workflow
+   - Temporary chat sessions
+   - Notification system
+
+4. **Week 7**: Admin Panel
+   - Dashboard with metrics
+   - CRUD operations for gyms/users
+   - Category management
+
+5. **Week 8**: Testing & Optimization
+   - Cross-platform testing
+   - Performance optimization
+   - Security audits
+   - User acceptance testing
+
+### Key Technical Decisions
+
+1. **Location Stack**
+   - Primary: Device GPS with React Native Location
+   - Fallback: IP-based geolocation
+   - Caching: Redis for frequent location queries
+
+2. **Real-time Features**
+   - Websockets for chat/notifications
+   - Firebase Cloud Messaging for push notifications
+   - Presence system for partner availability
+
+3. **Database Structure**
+```mermaid
+erDiagram
+    USER ||--o{ GYM_FAVORITE : saves
+    USER ||--o{ TRAINING_PREFERENCE : has
+    GYM ||--o{ AMENITY : has
+    GYM ||--o{ PARTNER_FEED : contains
+    PARTNER_FEED ||--o{ USER : lists
+    CHAT_SESSION ||--|{ USER : involves
+```
+
+Would you like me to:
+1. Provide sample API endpoints for critical features?
+2. Detail the notification system implementation?
+3. Show how the dummy partner feed would work?
+4. Explain the auto-expiring chat implementation?
+5. Focus on any specific part of the flow?

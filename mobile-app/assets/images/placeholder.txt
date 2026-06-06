@@ -1,0 +1,2 @@
+Placeholder file to ensure Flutter recognizes the assets/images directory.
+You can replace this with actual images as needed.
