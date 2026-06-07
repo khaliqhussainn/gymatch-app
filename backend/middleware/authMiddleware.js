@@ -17,6 +17,19 @@ exports.authenticate = (req, res, next) => {
   }
 };
 
+exports.optionalAuthenticate = (req, res, next) => {
+  const token = req.header('Authorization')?.replace('Bearer ', '');
+  if (token) {
+    try {
+      const decoded = jwt.verify(token, dbConfig.jwtSecret);
+      req.user = decoded;
+    } catch (error) {
+      // Ignore invalid token, treat as unauthenticated
+    }
+  }
+  next();
+};
+
 exports.authorize = (...roles) => {
   return (req, res, next) => {
     if (!roles.includes(req.user.role)) {

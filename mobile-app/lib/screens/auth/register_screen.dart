@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import '../../theme/app_theme.dart';
 import '../../routes/app_router.dart';
+import '../../providers/auth_provider.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -21,13 +24,147 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _agreedToTerms = false;
   bool _isLoading = false;
 
+  String? _nameError;
+  String? _emailError;
+  String? _passwordError;
+  String? _confirmPasswordError;
+
+  final GoogleSignIn _googleSignIn = GoogleSignIn();
+
+  @override
+  void initState() {
+    super.initState();
+    // Add listeners to update UI when text changes
+    _nameController.addListener(_validateForm);
+    _emailController.addListener(_validateForm);
+    _passwordController.addListener(_validateForm);
+    _confirmPasswordController.addListener(_validateForm);
+  }
+
+  void _validateForm() {
+    setState(() {
+      // Clear errors when user types
+      _nameError = null;
+      _emailError = null;
+      _passwordError = null;
+      _confirmPasswordError = null;
+    });
+  }
+
+  bool get _isFormValid {
+    return _nameController.text.trim().isNotEmpty &&
+           _emailController.text.trim().isNotEmpty &&
+           _passwordController.text.isNotEmpty &&
+           _confirmPasswordController.text.isNotEmpty &&
+           _nameError == null &&
+           _emailError == null &&
+           _passwordError == null &&
+           _confirmPasswordError == null &&
+           _agreedToTerms;
+  }
+
   Future<void> _register() async {
     if (!_agreedToTerms) return;
+
+    final name = _nameController.text.trim();
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+    final confirmPassword = _confirmPasswordController.text;
+
+    setState(() {
+      _nameError = null;
+      _emailError = null;
+      _passwordError = null;
+      _confirmPasswordError = null;
+    });
+
+    bool hasError = false;
+    if (name.isEmpty) {
+      setState(() => _nameError = 'Name is required');
+      hasError = true;
+    }
+
+    if (email.isEmpty) {
+      setState(() => _emailError = 'Email is required');
+      hasError = true;
+    } else if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email)) {
+      setState(() => _emailError = 'Please enter a valid email address');
+      hasError = true;
+    }
+
+    if (password.isEmpty) {
+      setState(() => _passwordError = 'Password is required');
+      hasError = true;
+    } else if (password.length < 6) {
+      setState(() => _passwordError = 'Password must be at least 6 characters');
+      hasError = true;
+    }
+
+    if (confirmPassword.isEmpty) {
+      setState(() => _confirmPasswordError = 'Please confirm your password');
+      hasError = true;
+    } else if (confirmPassword != password) {
+      setState(() => _confirmPasswordError = 'Passwords do not match');
+      hasError = true;
+    }
+
+    if (hasError) return;
+
     setState(() => _isLoading = true);
-    await Future.delayed(const Duration(milliseconds: 1200));
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    await authProvider.register(email, password, name: name);
+
     if (mounted) {
       setState(() => _isLoading = false);
-      context.go(AppRoutes.home);
+      if (authProvider.errorMessage != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(authProvider.errorMessage!),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      } else {
+        context.go(AppRoutes.home);
+      }
+    }
+  }
+
+  Future<void> _signupWithGoogle() async {
+    setState(() => _isLoading = true);
+    try {
+      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+      if (googleUser == null) {
+        setState(() => _isLoading = false);
+        return;
+      }
+
+      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      await authProvider.googleLogin(googleAuth.idToken ?? '');
+
+      if (mounted) {
+        setState(() => _isLoading = false);
+        if (authProvider.errorMessage != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(authProvider.errorMessage!),
+              backgroundColor: Colors.redAccent,
+            ),
+          );
+        } else {
+          context.go(AppRoutes.home);
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Google signup failed: $e'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
     }
   }
 
@@ -96,6 +233,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         controller: _nameController,
                         hint: 'Name',
                         prefixIcon: Icons.person_outline_rounded,
+                        errorText: _nameError,
+                        onChanged: (value) => setState(() => _nameError = null),
                       ).animate().fadeIn(delay: 250.ms, duration: 400.ms),
 
                       const SizedBox(height: 12),
@@ -106,6 +245,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         hint: 'Email',
                         prefixIcon: Icons.alternate_email_rounded,
                         keyboardType: TextInputType.emailAddress,
+                        errorText: _emailError,
+                        onChanged: (value) => setState(() => _emailError = null),
                       ).animate().fadeIn(delay: 310.ms, duration: 400.ms),
 
                       const SizedBox(height: 12),
@@ -116,6 +257,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         hint: 'Password',
                         prefixIcon: Icons.vpn_key_outlined,
                         obscureText: _obscurePassword,
+                        errorText: _passwordError,
+                        onChanged: (value) => setState(() => _passwordError = null),
                         suffixIcon: IconButton(
                           icon: Icon(
                             _obscurePassword
@@ -137,6 +280,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         hint: 'Confirm Password',
                         prefixIcon: Icons.vpn_key_outlined,
                         obscureText: _obscureConfirmPassword,
+                        errorText: _confirmPasswordError,
+                        onChanged: (value) => setState(() => _confirmPasswordError = null),
                         suffixIcon: IconButton(
                           icon: Icon(
                             _obscureConfirmPassword
@@ -229,7 +374,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             elevation: 0,
                           ),
                           onPressed:
-                              (_isLoading || !_agreedToTerms) ? null : _register,
+                              (_isLoading || !_isFormValid) ? null : _register,
                           child: _isLoading
                               ? const SizedBox(
                                   width: 22,
@@ -290,7 +435,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               borderRadius: BorderRadius.circular(27),
                             ),
                           ),
-                          onPressed: () {},
+                          onPressed: _isLoading ? null : _signupWithGoogle,
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
@@ -369,27 +514,48 @@ class _RegisterScreenState extends State<RegisterScreen> {
     TextInputType keyboardType = TextInputType.text,
     bool obscureText = false,
     Widget? suffixIcon,
+    String? errorText,
+    Function(String)? onChanged,
   }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFF252525),
-        borderRadius: BorderRadius.circular(30),
-      ),
-      child: TextField(
-        controller: controller,
-        keyboardType: keyboardType,
-        obscureText: obscureText,
-        style: const TextStyle(color: Colors.white, fontSize: 15),
-        decoration: InputDecoration(
-          hintText: hint,
-          hintStyle: const TextStyle(color: Colors.white38, fontSize: 15),
-          prefixIcon: Icon(prefixIcon, color: Colors.white38, size: 20),
-          suffixIcon: suffixIcon,
-          border: InputBorder.none,
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          decoration: BoxDecoration(
+            color: const Color(0xFF252525),
+            borderRadius: BorderRadius.circular(30),
+            border: errorText != null
+                ? Border.all(color: Colors.redAccent, width: 1)
+                : null,
+          ),
+          child: TextField(
+            controller: controller,
+            keyboardType: keyboardType,
+            obscureText: obscureText,
+            onChanged: onChanged,
+            style: const TextStyle(color: Colors.white, fontSize: 15),
+            decoration: InputDecoration(
+              hintText: hint,
+              hintStyle: const TextStyle(color: Colors.white38, fontSize: 15),
+              prefixIcon: Icon(prefixIcon, color: Colors.white38, size: 20),
+              suffixIcon: suffixIcon,
+              border: InputBorder.none,
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            ),
+          ),
         ),
-      ),
+        if (errorText != null) ...[
+          const SizedBox(height: 4),
+          Padding(
+            padding: const EdgeInsets.only(left: 16),
+            child: Text(
+              errorText,
+              style: const TextStyle(color: Colors.redAccent, fontSize: 12),
+            ),
+          ),
+        ],
+      ],
     );
   }
 }
