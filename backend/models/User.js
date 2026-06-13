@@ -22,17 +22,31 @@ class User {
     return { id: result.insertId, email, role };
   }
 
-  static async findOrCreateGoogleUser(profile) {
-    const { id, emails, displayName } = profile;
-    const email = emails[0].value;
-    
+  static async findOrCreateGoogleUser(payload) {
+    const googleId = payload.sub || payload.id;
+    const email = payload.email || (payload.emails && payload.emails[0] && payload.emails[0].value);
+    const name = payload.name || payload.displayName;
+
+    if (!email) {
+      throw new Error('Email field is missing in Google OAuth payload');
+    }
+
     let user = await this.findByEmail(email);
     if (!user) {
       user = await this.createWithGoogle({ 
         email, 
-        googleId: id,
-        name: displayName
+        googleId,
       });
+
+      // Create profile with name
+      try {
+        await pool.query(
+          'INSERT INTO profiles (user_id, name) VALUES (?, ?)',
+          [user.id, name || null]
+        );
+      } catch (profileErr) {
+        console.error('[User.findOrCreateGoogleUser.createProfile]', profileErr);
+      }
     }
     return user;
   }

@@ -20,6 +20,9 @@ class ApiClient {
 
   // Production backend URL
   static const String _productionUrl = 'https://gymatch.syedmisbahali.com/api';
+  // Web Application OAuth Client ID (used as serverClientId for Google Sign-In)
+  // Android client ID: 466640926142-m7c6snjamq92et7ms36a6o4pmf1srmd5.apps.googleusercontent.com
+  static const String googleClientId = '466640926142-s7s1ra0sn74ov37lrrdf96cubjloqh5g.apps.googleusercontent.com';
 
   static String get defaultBaseUrl => _productionUrl;
 

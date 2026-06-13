@@ -28,7 +28,7 @@ class GymProvider extends ChangeNotifier {
   // Location
   double _userLat = LocationService.fallbackLatitude;
   double _userLng = LocationService.fallbackLongitude;
-  String _locationLabel = 'Karachi Central';
+  String _locationLabel = 'Washington DC';
   bool _useDeviceLocation = true;
   bool _locationLoaded = false;
 

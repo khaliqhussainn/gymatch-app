@@ -502,18 +502,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
-      builder: (context) => Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom,
-          left: 20,
-          right: 20,
-          top: 24,
-        ),
+      builder: (context) => SafeArea(
+        bottom: false,
+        child: Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+            left: 20,
+            right: 20,
+            top: 16,
+          ),
         child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 24),
+                  decoration: BoxDecoration(
+                    color: Colors.white24,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
               const Text(
                 'EDIT PROFILE DETAILS',
                 style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900, letterSpacing: 1.2),
@@ -575,34 +588,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ),
       ),
+    ),
     );
   }
 
   void _showLocationPreferencesBottomSheet(GymProvider gymProvider) {
     final locationOptions = [
       _LocationOption(
-        label: 'Karachi Central',
-        subtitle: 'Default GYMatch launch area',
-        latitude: 24.8607,
-        longitude: 67.0011,
+        label: 'Venice Beach, CA',
+        subtitle: 'California fitness hubs',
+        latitude: 33.9922,
+        longitude: -118.4718,
       ),
       _LocationOption(
-        label: 'Clifton',
-        subtitle: 'Karachi coastal gyms',
-        latitude: 24.8138,
-        longitude: 67.0306,
+        label: 'Copacabana, Brazil',
+        subtitle: 'INPI filing support area',
+        latitude: -22.9711,
+        longitude: -43.1886,
       ),
       _LocationOption(
-        label: 'Gulshan-e-Iqbal',
-        subtitle: 'Karachi east training spots',
-        latitude: 24.9180,
-        longitude: 67.0971,
-      ),
-      _LocationOption(
-        label: 'DHA Lahore',
-        subtitle: 'Lahore premium gyms',
-        latitude: 31.4697,
-        longitude: 74.4111,
+        label: 'Washington DC',
+        subtitle: 'Examiner test area',
+        latitude: 38.8893,
+        longitude: -77.0091,
       ),
     ];
 
@@ -620,8 +628,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
-      builder: (context) => StatefulBuilder(
-        builder: (context, setModalState) {
+      builder: (context) => SafeArea(
+        bottom: false,
+        child: StatefulBuilder(
+          builder: (context, setModalState) {
           Future<void> useCurrentLocation() async {
             setModalState(() => isRefreshingLocation = true);
             try {
@@ -648,13 +658,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
               bottom: MediaQuery.of(context).viewInsets.bottom,
               left: 20,
               right: 20,
-              top: 24,
+              top: 16,
             ),
             child: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      margin: const EdgeInsets.only(bottom: 24),
+                      decoration: BoxDecoration(
+                        color: Colors.white24,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
                   Row(
                     children: [
                       Expanded(
@@ -904,6 +925,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           );
         },
       ),
+    ),
     );
   }
 

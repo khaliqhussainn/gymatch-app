@@ -81,7 +81,38 @@ VALUES
   (3, 'CROSSFIT KARACHI', 'Elite Box', 'Clifton', 'Near Sea View', 24.8040, 67.0300, 4.6, TRUE, '6:00 am - 9:00 pm', '+92-333-1112222', 'CrossFit'),
   (4, 'YOGA STUDIO 5', 'Mind & Body', 'Defence', 'Near DHA Phase 5', 24.8100, 67.0600, 4.9, TRUE, '7:00 am - 8:00 pm', '+92-321-9876543', 'Yoga'),
   (5, 'MMA FIGHTERS GYM', 'Combat Zone', 'PECHS', 'Near Tariq Road', 24.8700, 67.0400, 4.5, FALSE, '9:00 am - 6:00 pm', '+92-333-5556666', 'MMA'),
-  (6, 'LADIES ONLY FITNESS', 'Women''s Health', 'Gulshan', 'Near Gulshan Chowrangi', 24.9200, 67.0900, 4.8, TRUE, '7:00 am - 9:00 pm', '+92-300-4445555', 'Women');
+  (6, 'LADIES ONLY FITNESS', 'Women''s Health', 'Gulshan', 'Near Gulshan Chowrangi', 24.9200, 67.0900, 4.8, TRUE, '7:00 am - 9:00 pm', '+92-300-4445555', 'Women'),
+  -- Seed gyms in Venice Beach, CA
+  (7, 'GOLD''S GYM VENICE', 'Mecca of Bodybuilding', 'Venice Beach, CA', 'Near Venice Boardwalk', 33.9922, -118.4718, 4.9, TRUE, '5:00 am - 11:00 pm', '+1-310-392-6004', 'GYM'),
+  (8, 'MUSCLE BEACH GYM', 'Venice Beach Recreation Center', 'Venice Beach, CA', 'Outdoor Gym Area', 33.9863, -118.4735, 4.8, TRUE, '8:00 am - 7:00 pm', '+1-310-399-2775', 'GYM'),
+  -- Seed gyms in Copacabana, Brazil
+  (9, 'BODYTECH COPACABANA', 'BT Copacabana', 'Copacabana, Brazil', 'Near Copacabana Beach', -22.9711, -43.1886, 4.7, TRUE, '6:00 am - 10:00 pm', '+55-21-2247-9000', 'GYM'),
+  (10, 'SMART FIT COPACABANA', 'Smart Fit Beachfront', 'Copacabana, Brazil', 'Av. Atlântica', -22.9790, -43.1920, 4.5, TRUE, '6:00 am - 11:00 pm', '+55-21-3003-0000', 'GYM'),
+  -- Seed gyms in Washington DC
+  (11, 'GOLD''S GYM CAPITOL HILL', 'Capitol Hill', 'Washington DC', 'Near Capitol South Metro', 38.8893, -77.0091, 4.6, TRUE, '6:00 am - 10:00 pm', '+1-202-547-4653', 'GYM'),
+  (12, 'EQUINOX SPORTS CLUB DC', 'Equinox Georgetown', 'Washington DC', 'Georgetown area', 38.9051, -77.0502, 4.9, TRUE, '5:30 am - 9:30 pm', '+1-202-974-6600', 'GYM'),
+  (13, 'WASHINGTON DC CROSSFIT', 'Capitol CrossFit', 'Washington DC', 'Downtown DC', 38.9090, -77.0310, 4.8, TRUE, '6:00 am - 8:30 pm', '+1-202-555-0199', 'CrossFit'),
+  -- Extra Karachi Gyms
+  (14, 'SHAPE UP FITNESS', 'Karachi West', 'Karachi Central', 'Orangi Town Area', 24.9350, 66.9700, 4.4, TRUE, '6:00 am - 10:00 pm', '+92-300-9998888', 'GYM'),
+  (15, 'THE GRID CROSSFIT', 'Iron Grid', 'Clifton', 'Clifton Block 2', 24.8150, 67.0250, 4.8, TRUE, '6:30 am - 9:30 pm', '+92-333-8887777', 'CrossFit'),
+  -- Extra Venice Beach Gyms
+  (16, 'BASECAMP FITNESS VENICE', 'Basecamp Venice', 'Venice Beach, CA', 'Lincoln Blvd', 33.9961, -118.4552, 4.7, TRUE, '5:00 am - 9:00 pm', '+1-310-555-0101', 'GYM'),
+  (17, 'DEUS EX MACHINA CROSSFIT', 'Deus Gym', 'Venice Beach, CA', 'Venice Blvd', 33.9995, -118.4468, 4.6, TRUE, '6:00 am - 8:00 pm', '+1-310-555-0102', 'CrossFit'),
+  -- Extra Copacabana Gyms
+  (18, 'CROSSFIT COPACABANA', 'Beach CrossFit', 'Copacabana, Brazil', 'Rua Figueiredo de Magalhães', -22.9680, -43.1895, 4.8, TRUE, '6:00 am - 9:00 pm', '+55-21-99999-8888', 'CrossFit'),
+  (19, 'ACADEMIA PR1ME', 'Prime Copacabana', 'Copacabana, Brazil', 'Nossa Senhora de Copacabana', -22.9735, -43.1850, 4.4, TRUE, '7:00 am - 10:00 pm', '+55-21-2222-3333', 'GYM'),
+  -- Extra Washington DC Gyms
+  (20, 'VIDA FITNESS CAPITOL HILL', 'Vida Capitol Hill', 'Washington DC', 'K Street SE', 38.8785, -76.9950, 4.9, TRUE, '5:00 am - 11:00 pm', '+1-202-999-0200', 'GYM'),
+  (21, 'MINT GYM & STUDIO', 'Mint Adams Morgan', 'Washington DC', '18th Street NW', 38.9210, -77.0425, 4.7, TRUE, '6:00 am - 10:00 pm', '+1-202-999-0300', 'Yoga'),
+  -- More Venice Beach Gyms
+  (22, 'YOGA NEST VENICE', 'Venice Yoga', 'Venice Beach, CA', 'Abbot Kinney Blvd', 33.9902, -118.4650, 4.8, TRUE, '7:00 am - 8:00 pm', '+1-310-555-0103', 'Yoga'),
+  (23, 'VENICE UFC GYM', 'UFC Fit Venice', 'Venice Beach, CA', 'Rose Ave', 33.9975, -118.4750, 4.6, TRUE, '6:00 am - 10:00 pm', '+1-310-555-0104', 'GYM'),
+  -- More Copacabana Gyms
+  (24, 'YOGA COPACABANA', 'Yoga & Meditation Copacabana', 'Copacabana, Brazil', 'Av. Atlântica', -22.9750, -43.1900, 4.7, TRUE, '7:00 am - 9:00 pm', '+55-21-2222-4444', 'Yoga'),
+  (25, 'ESTRADA MMA ACADEMIA', 'Estrada combat', 'Copacabana, Brazil', 'Rua Barata Ribeiro', -22.9695, -43.1865, 4.5, TRUE, '8:00 am - 9:00 pm', '+55-21-3333-5555', 'MMA'),
+  -- More Washington DC Gyms
+  (26, 'BETA ACADEMY MMA', 'Beta MMA', 'Washington DC', 'Florida Ave NW', 38.9165, -77.0255, 4.8, TRUE, '6:00 am - 9:30 pm', '+1-202-999-0400', 'MMA'),
+  (27, 'CROSSFIT DUPONT', 'Dupont CrossFit', 'Washington DC', 'Connecticut Ave NW', 38.9098, -77.0430, 4.7, TRUE, '6:00 am - 9:00 pm', '+1-202-999-0500', 'CrossFit');
 
 -- Seed images
 INSERT IGNORE INTO gym_images (gym_id, image_url, sort_order) VALUES
@@ -93,7 +124,31 @@ INSERT IGNORE INTO gym_images (gym_id, image_url, sort_order) VALUES
   (3, 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=800', 0),
   (4, 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=800', 0),
   (5, 'https://images.unsplash.com/photo-1549576490-b0b4831ef60a?w=800', 0),
-  (6, 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=800', 0);
+  (6, 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=800', 0),
+  -- Seed images for new gyms
+  (7, 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800', 0),
+  (7, 'https://images.unsplash.com/photo-1540497077202-7c8a3999166f?w=800', 1),
+  (8, 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=800', 0),
+  (9, 'https://images.unsplash.com/photo-1540497077202-7c8a3999166f?w=800', 0),
+  (9, 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=800', 1),
+  (10, 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=800', 0),
+  (11, 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800', 0),
+  (12, 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=800', 0),
+  (13, 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=800', 0),
+  (14, 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800', 0),
+  (15, 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=800', 0),
+  (16, 'https://images.unsplash.com/photo-1540497077202-7c8a3999166f?w=800', 0),
+  (17, 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=800', 0),
+  (18, 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=800', 0),
+  (19, 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=800', 0),
+  (20, 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=800', 0),
+  (21, 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=800', 0),
+  (22, 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=800', 0),
+  (23, 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800', 0),
+  (24, 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=800', 0),
+  (25, 'https://images.unsplash.com/photo-1549576490-b0b4831ef60a?w=800', 0),
+  (26, 'https://images.unsplash.com/photo-1549576490-b0b4831ef60a?w=800', 0),
+  (27, 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=800', 0);
 
 -- Seed amenities
 INSERT IGNORE INTO gym_amenities (gym_id, name) VALUES
@@ -103,14 +158,56 @@ INSERT IGNORE INTO gym_amenities (gym_id, name) VALUES
   (3, 'CrossFit Rig'), (3, 'Shower'), (3, 'Parking'), (3, 'Weights'),
   (4, 'Yoga Studio'), (4, 'Shower'), (4, 'Meditation Room'), (4, 'Free WiFi'),
   (5, 'MMA Cage'), (5, 'Boxing Bags'), (5, 'Shower'), (5, 'Lockers'),
-  (6, 'Cardio'), (6, 'Weights'), (6, 'Shower'), (6, 'Locker Room'), (6, 'Free WiFi');
+  (6, 'Cardio'), (6, 'Weights'), (6, 'Shower'), (6, 'Locker Room'), (6, 'Free WiFi'),
+  -- Seed amenities for new gyms
+  (7, 'Weights'), (7, 'Cardio'), (7, 'Personal Training'), (7, 'Shower'), (7, 'Locker Room'), (7, 'Parking'),
+  (8, 'Outdoor Area'), (8, 'Weights'), (8, 'Beach View'),
+  (9, 'Pool'), (9, 'Sauna'), (9, 'Weights'), (9, 'Cardio'), (9, 'Shower'), (9, 'Locker Room'),
+  (10, 'Cardio'), (10, 'Weights'), (10, 'Shower'), (10, 'Locker Room'),
+  (11, 'Weights'), (11, 'Cardio'), (11, 'Personal Training'), (11, 'Shower'), (11, 'Locker Room'),
+  (12, 'Yoga Studio'), (12, 'Spa'), (12, 'Pool'), (12, 'Weights'), (12, 'Cardio'), (12, 'Shower'), (12, 'Locker Room'),
+  (13, 'CrossFit Rig'), (13, 'Weights'), (13, 'Shower'), (13, 'Parking'),
+  (14, 'Weights'), (14, 'Cardio'), (14, 'Parking'),
+  (15, 'CrossFit Rig'), (15, 'Weights'), (15, 'Shower'),
+  (16, 'Weights'), (16, 'Cardio'), (16, 'Locker Room'),
+  (17, 'CrossFit Rig'), (17, 'Shower'), (17, 'Weights'),
+  (18, 'CrossFit Rig'), (18, 'Beach View'), (18, 'Shower'),
+  (19, 'Weights'), (19, 'Cardio'), (19, 'Locker Room'),
+  (20, 'Pool'), (20, 'Weights'), (20, 'Cardio'), (20, 'Shower'),
+  (21, 'Yoga Studio'), (21, 'Weights'), (21, 'Free WiFi'),
+  (22, 'Yoga Studio'), (22, 'Meditation Room'),
+  (23, 'Weights'), (23, 'Cardio'), (23, 'Sauna'), (23, 'Shower'),
+  (24, 'Yoga Studio'), (24, 'Meditation'), (24, 'Beach View'),
+  (25, 'MMA Ring'), (25, 'Bags'), (25, 'Shower'),
+  (26, 'MMA Mat'), (26, 'Bags'), (26, 'Showers'),
+  (27, 'CrossFit Rig'), (27, 'Weights'), (27, 'Parking');
 
 -- Seed membership plans
 INSERT IGNORE INTO gym_membership_plans (gym_id, name, price, billing_period, features, is_premium) VALUES
   (1, 'BASIC ACCESS', 30.00, 'mo', '["Basic Access","Cardio & Weights","Standard Hours","Locker & Showers","1 Free Assessment"]', FALSE),
   (1, 'ULTRA PREMIUMMATCH', 99.00, 'mo', '["Premium Access","All Basic Features","Unlimited Classes","Sauna & Spa","Multi-Branch Access","2 Guest Passes/mo","Personal training"]', TRUE),
   (2, 'BASIC ACCESS', 25.00, 'mo', '["Basic Access","Cardio & Weights","Standard Hours","Locker Room"]', FALSE),
-  (2, 'PREMIUM', 75.00, 'mo', '["Premium Access","All Basic Features","Unlimited Classes","Personal Training"]', TRUE);
+  (2, 'PREMIUM', 75.00, 'mo', '["Premium Access","All Basic Features","Unlimited Classes","Personal Training"]', TRUE),
+  -- Seed membership plans for new gyms
+  (7, 'VENICE GOLD ACCESS', 45.00, 'mo', '["Basic Access","Cardio & Weights","Standard Hours","Locker & Showers"]', FALSE),
+  (7, 'MECCA VIP', 120.00, 'mo', '["Premium Access","All Gym Features","Unlimited Classes","Sauna & Spa","Personal training"]', TRUE),
+  (9, 'BODYTECH PLAN', 60.00, 'mo', '["Basic Copacabana Access","Cardio & Weights","Locker & Showers"]', FALSE),
+  (11, 'CAPITOL BASIC', 35.00, 'mo', '["Basic Access","Cardio & Weights","Locker & Showers"]', FALSE),
+  (12, 'EQUINOX SIGNATURE', 150.00, 'mo', '["All Club Access","Spa & Pool","Unlimited Yoga & Pilates"]', TRUE),
+  (14, 'SHAPE BASIC', 20.00, 'mo', '["Basic Access","Weights"]', FALSE),
+  (15, 'GRID CROSSFIT PLAN', 50.00, 'mo', '["CrossFit Rig Access","Coaching"]', FALSE),
+  (16, 'BASECAMP MEMBERSHIP', 55.00, 'mo', '["Basecamp Access","All cardio & weights"]', FALSE),
+  (17, 'DEUS RIG ACCESS', 48.00, 'mo', '["CrossFit Access","Showers"]', FALSE),
+  (18, 'COPACABANA BEACH RIG', 40.00, 'mo', '["Outdoor CrossFit Access"]', FALSE),
+  (19, 'PR1ME PLAN', 30.00, 'mo', '["Full Gym Access","Lockers"]', FALSE),
+  (20, 'VIDA VIP', 99.00, 'mo', '["Vida Club Access","Spa & Pool","Cardio & Weights"]', TRUE),
+  (21, 'MINT MEMBERSHIP', 70.00, 'mo', '["Unlimited Yoga & Gym Access"]', FALSE),
+  (22, 'YOGA UNLIMITED', 65.00, 'mo', '["Unlimited Yoga Classes"]', FALSE),
+  (23, 'UFC GOLD', 85.00, 'mo', '["UFC Gym Access","Cardio & Weights"]', TRUE),
+  (24, 'YOGA COPACABANA VIP', 50.00, 'mo', '["Daily Beachfront Yoga"]', FALSE),
+  (25, 'ESTRADA MMA PASS', 55.00, 'mo', '["MMA & Combat Training"]', FALSE),
+  (26, 'BETA MMA MEMBERSHIP', 90.00, 'mo', '["Unlimited Combat Classes"]', TRUE),
+  (27, 'DUPONT PASS', 60.00, 'mo', '["CrossFit Classes","Access"]', FALSE);
 
 -- Notifications table
 CREATE TABLE IF NOT EXISTS notifications (

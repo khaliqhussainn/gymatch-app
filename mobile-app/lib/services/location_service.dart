@@ -6,9 +6,9 @@ class LocationService {
 
   LocationService._internal();
 
-  // Fallback default coordinates (e.g., Karachi Central / Gold's Gym mock area)
-  static const double fallbackLatitude = 24.8607;
-  static const double fallbackLongitude = 67.0011;
+  // Fallback default coordinates (e.g., Washington DC)
+  static const double fallbackLatitude = 38.8893;
+  static const double fallbackLongitude = -77.0091;
 
   Future<Position> getCurrentPosition() async {
     bool serviceEnabled;
