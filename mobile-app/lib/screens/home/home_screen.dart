@@ -7,6 +7,7 @@ import '../../routes/app_router.dart';
 import '../../providers/gym_provider.dart';
 import '../../providers/notification_provider.dart';
 import '../../models/gym_model.dart';
+import '../../widgets/featured_badge.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -381,7 +382,13 @@ class _HomeScreenState extends State<HomeScreen> {
       decoration: BoxDecoration(
         color: const Color(0xFF121212),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0xFF1E1E1E), width: 1),
+        border: Border.all(
+          color: gym.isFeatured ? AppColors.primary.withOpacity(0.5) : const Color(0xFF1E1E1E),
+          width: gym.isFeatured ? 1.5 : 1,
+        ),
+        boxShadow: gym.isFeatured
+            ? [BoxShadow(color: AppColors.primary.withOpacity(0.12), blurRadius: 16, spreadRadius: 2)]
+            : null,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -401,7 +408,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       )
                     : _imageFallback(),
               ),
-              // Rating Badge
+              // Rating Badge — top left
               Positioned(
                 left: 16,
                 top: 16,
@@ -427,7 +434,20 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
               ),
-              // Open/Closed Badge
+              // Featured Badge — top center, on the image
+              if (gym.isFeatured)
+                Positioned(
+                  top: 16,
+                  left: 0,
+                  right: 0,
+                  child: Center(
+                    child: FeaturedBadge(
+                      fontSize: 12,
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                    ),
+                  ),
+                ),
+              // Open/Closed Badge — top right
               Positioned(
                 right: 16,
                 top: 16,
@@ -462,6 +482,7 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Expanded(
                       child: Text(

@@ -7,6 +7,7 @@ import '../../routes/app_router.dart';
 import '../../providers/gym_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../models/gym_model.dart';
+import '../../widgets/featured_badge.dart';
 
 class SavedGymsScreen extends StatefulWidget {
   const SavedGymsScreen({super.key});
@@ -97,7 +98,10 @@ class _SavedGymsScreenState extends State<SavedGymsScreen> {
       decoration: BoxDecoration(
         color: const Color(0xFF121212),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white10),
+        border: Border.all(
+          color: gym.isFeatured ? AppColors.primary.withOpacity(0.4) : Colors.white10,
+          width: gym.isFeatured ? 1.5 : 1,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -130,15 +134,26 @@ class _SavedGymsScreenState extends State<SavedGymsScreen> {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.all(12.0),
+            padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  gym.name,
-                  style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w900, letterSpacing: 0.5),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        gym.name,
+                        style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w900, letterSpacing: 0.5),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    if (gym.isFeatured) ...[
+                      const SizedBox(width: 4),
+                      const FeaturedBadge(fontSize: 9, padding: EdgeInsets.symmetric(horizontal: 7, vertical: 3)),
+                    ],
+                  ],
                 ),
                 const SizedBox(height: 4),
                 Text(

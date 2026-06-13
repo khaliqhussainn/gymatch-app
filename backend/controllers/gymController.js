@@ -7,7 +7,7 @@ const pool = require('../config/connection');
  */
 exports.getNearby = async (req, res) => {
   try {
-    const { lat, lng, radius = 15, search = '', category = '' } = req.query;
+    const { lat, lng, radius = 15, search = '', category = '', featured = '' } = req.query;
 
     if (!lat || !lng) {
       return res.status(400).json({ error: 'Location coordinates (lat, lng) are required.' });
@@ -26,6 +26,7 @@ exports.getNearby = async (req, res) => {
       radiusKm: parseFloat(radius),
       search,
       category,
+      featuredOnly: featured === 'true',
     });
 
     res.json({ gyms, count: gyms.length });

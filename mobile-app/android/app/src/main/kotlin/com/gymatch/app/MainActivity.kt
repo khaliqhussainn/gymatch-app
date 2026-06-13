@@ -1,4 +1,4 @@
-package com.example.moovit_app
+package com.gymatch.app
 
 import io.flutter.embedding.android.FlutterActivity
 

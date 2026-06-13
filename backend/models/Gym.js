@@ -5,12 +5,13 @@ class Gym {
    * Find nearby gyms using Haversine formula.
    * Returns gyms within radiusKm, sorted by distance.
    */
-  static async findNearby({ lat, lng, radiusKm = 10, search = '', category = '' }) {
+  static async findNearby({ lat, lng, radiusKm = 10, search = '', category = '', featuredOnly = false }) {
     let query = `
       SELECT
         g.id, g.name, g.sub_name, g.location_name, g.near_location,
         g.latitude, g.longitude, g.rating, g.is_open,
         g.open_hours, g.contact_phone, g.category,
+        COALESCE(g.is_featured, 0) AS is_featured,
         (6371 * acos(
           GREATEST(-1, LEAST(1,
             cos(radians(?)) * cos(radians(g.latitude)) *
@@ -25,6 +26,10 @@ class Gym {
     `;
     const params = [lat, lng, lat];
 
+    if (featuredOnly) {
+      query += ` AND COALESCE(g.is_featured, 0) = 1`;
+    }
+
     if (category && category.toUpperCase() !== 'ALL' && category.toUpperCase() !== 'GYM') {
       query += ` AND UPPER(g.category) = ?`;
       params.push(category.toUpperCase());
@@ -38,7 +43,7 @@ class Gym {
 
     query += `
       HAVING distance_km <= ?
-      ORDER BY distance_km ASC
+      ORDER BY COALESCE(g.is_featured, 0) DESC, distance_km ASC
       LIMIT 50
     `;
     params.push(radiusKm);
@@ -52,7 +57,11 @@ class Gym {
    */
   static async findById(id) {
     const [gyms] = await pool.query(
-      `SELECT g.*,
+      `SELECT g.id, g.name, g.sub_name, g.location_name, g.near_location,
+        g.latitude, g.longitude, g.rating, g.is_open,
+        g.open_hours, g.contact_phone, g.category,
+        COALESCE(g.is_featured, 0) AS is_featured,
+        g.created_at,
         (SELECT COUNT(*) FROM active_partners ap WHERE ap.gym_id = g.id) AS active_partners_count
        FROM gyms g WHERE g.id = ?`,
       [id]
@@ -111,11 +120,12 @@ class Gym {
   static async getSaved(userId) {
     const [rows] = await pool.query(
       `SELECT g.id, g.name, g.sub_name, g.location_name, g.rating, g.category,
+        COALESCE(g.is_featured, 0) AS is_featured,
         (SELECT i.image_url FROM gym_images i WHERE i.gym_id = g.id ORDER BY i.sort_order LIMIT 1) AS cover_image
        FROM saved_gyms s
        JOIN gyms g ON g.id = s.gym_id
        WHERE s.user_id = ?
-       ORDER BY s.created_at DESC`,
+       ORDER BY g.is_featured DESC, s.created_at DESC`,
       [userId]
     );
     return rows;

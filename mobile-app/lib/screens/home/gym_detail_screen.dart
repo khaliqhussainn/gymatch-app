@@ -1,13 +1,17 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart' as url_launcher;
+import 'package:share_plus/share_plus.dart' show Share;
 import '../../theme/app_theme.dart';
 import '../../routes/app_router.dart';
 import '../../providers/gym_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../models/gym_model.dart';
 import '../../providers/chat_provider.dart';
+import '../../widgets/featured_badge.dart';
 
 class GymDetailScreen extends StatefulWidget {
   final int? gymId;
@@ -70,6 +74,76 @@ class _GymDetailScreenState extends State<GymDetailScreen> {
     } else {
       setState(() => _isSaving = false);
     }
+  }
+
+  /// Open Google Maps navigation to the gym location
+  Future<void> _openDirections() async {
+    if (_gym == null) return;
+    final lat = _gym!.latitude;
+    final lng = _gym!.longitude;
+    final name = Uri.encodeComponent(_gym!.name);
+
+    // Try Google Maps app first, then fall back to browser
+    final googleMapsApp = Uri.parse(
+      'google.navigation:q=$lat,$lng&mode=d',
+    );
+    final googleMapsBrowser = Uri.parse(
+      'https://www.google.com/maps/dir/?api=1&destination=$lat,$lng&destination_place_id=$name&travelmode=driving',
+    );
+
+    if (await url_launcher.canLaunchUrl(googleMapsApp)) {
+      await url_launcher.launchUrl(googleMapsApp);
+    } else {
+      await url_launcher.launchUrl(
+        googleMapsBrowser,
+        mode: url_launcher.LaunchMode.externalApplication,
+      );
+    }
+  }
+
+  /// Call the gym's phone number
+  Future<void> _callGym() async {
+    if (_gym == null || _gym!.contactPhone.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No phone number available for this gym.')),
+      );
+      return;
+    }
+
+    // Strip everything except digits and + for international
+    final digits = _gym!.contactPhone.replaceAll(RegExp(r'[^\d+]'), '');
+    final uri = Uri.parse('tel:$digits');
+
+    if (await url_launcher.canLaunchUrl(uri)) {
+      await url_launcher.launchUrl(uri);
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Cannot make a call to ${_gym!.contactPhone}')),
+        );
+      }
+    }
+  }
+
+  /// Share gym info via native share sheet (all social apps)
+  Future<void> _shareGym() async {
+    if (_gym == null) return;
+    final gym = _gym!;
+
+    final lines = [
+      '🏋️ ${gym.name}',
+      '⭐ ${gym.rating.toStringAsFixed(1)} • ${gym.distanceLabel} away',
+      '📍 ${gym.locationName}',
+      '🕐 ${gym.openHours}',
+      if (gym.contactPhone.isNotEmpty) '📞 ${gym.contactPhone}',
+      '',
+      'Find your perfect workout partner on GYMatch!',
+    ];
+
+    await Share.share(
+      lines.join('\n'),
+      subject: 'Check out ${gym.name} on GYMatch',
+    );
   }
 
   void _showUnlockModal() {
@@ -295,6 +369,10 @@ class _GymDetailScreenState extends State<GymDetailScreen> {
                       gym.rating.toStringAsFixed(1),
                       style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
                     ),
+                    if (gym.isFeatured) ...[
+                      const SizedBox(width: 10),
+                      const FeaturedBadge(),
+                    ],
                   ],
                 ),
                 const SizedBox(height: 6),
@@ -308,22 +386,26 @@ class _GymDetailScreenState extends State<GymDetailScreen> {
                 // Action Buttons
                 Row(
                   children: [
-                    _buildActionButton('Direction', true, Icons.near_me_rounded, () {}),
+                    _buildActionButton('Direction', true,  Icons.near_me_rounded,     _openDirections),
                     const SizedBox(width: 8),
-                    _buildActionButton('Call', false, Icons.call_rounded, () {}),
+                    _buildActionButton('Call',      false, Icons.call_rounded,         _callGym),
                     const SizedBox(width: 8),
-                    _buildActionButton('Save', false, gym.isSaved ? Icons.bookmark_rounded : Icons.bookmark_border_rounded, _toggleSave),
+                    _buildActionButton('Save',      false, gym.isSaved ? Icons.bookmark_rounded : Icons.bookmark_border_rounded, _toggleSave),
                     const SizedBox(width: 8),
-                    _buildActionButton('Share', false, Icons.share_rounded, () {}),
+                    _buildActionButton('Share',     false, Icons.share_rounded,        _shareGym),
                   ],
                 ),
 
                 const SizedBox(height: 28),
 
                 // Active Partner Feed
-                Consumer<GymProvider>(
-                  builder: (context, gymProvider, child) {
+                Consumer2<GymProvider, AuthProvider>(
+                  builder: (context, gymProvider, authProvider, child) {
                     final partners = gymProvider.activePartners;
+                    final isGuest = authProvider.isGuest;
+                    // For guest: show 3 fake blurred cards; for users: show real data
+                    final displayCount = isGuest ? 3 : partners.length;
+
                     return Container(
                       decoration: BoxDecoration(
                         color: const Color(0xFF121212),
@@ -338,40 +420,44 @@ class _GymDetailScreenState extends State<GymDetailScreen> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               const Text('ACTIVE PARTNER FEED', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w900, letterSpacing: 1)),
-                              _isTogglingPartner
-                                  ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFFCBF135)))
-                                  : Switch(
-                                      value: _myActiveStatus,
-                                      onChanged: (val) async {
-                                        final authProvider = Provider.of<AuthProvider>(context, listen: false);
-                                        if (authProvider.isGuest) {
-                                          _showUnlockModal();
-                                          return;
-                                        }
-                                        setState(() => _isTogglingPartner = true);
-                                        final res = await gymProvider.togglePartnerStatus(widget.gymId!);
-                                        if (mounted && res != null) {
-                                          setState(() {
-                                            _myActiveStatus = res;
-                                            _isTogglingPartner = false;
-                                            if (_gym != null) {
-                                              _gym = _gym!.copyWith(
-                                                isActivePartner: res,
-                                                activePartnersCount: res
-                                                    ? _gym!.activePartnersCount + 1
-                                                    : (_gym!.activePartnersCount > 0 ? _gym!.activePartnersCount - 1 : 0),
-                                              );
-                                            }
-                                          });
-                                        } else {
-                                          setState(() => _isTogglingPartner = false);
-                                        }
-                                      },
+                              isGuest
+                                  ? Switch(
+                                      value: false,
+                                      onChanged: (_) => _showUnlockModal(),
                                       activeColor: AppColors.primary,
                                       activeTrackColor: AppColors.primary.withOpacity(0.3),
                                       inactiveThumbColor: Colors.grey,
                                       inactiveTrackColor: Colors.white12,
-                                    ),
+                                    )
+                                  : _isTogglingPartner
+                                      ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFFCBF135)))
+                                      : Switch(
+                                          value: _myActiveStatus,
+                                          onChanged: (val) async {
+                                            setState(() => _isTogglingPartner = true);
+                                            final res = await gymProvider.togglePartnerStatus(widget.gymId!);
+                                            if (mounted && res != null) {
+                                              setState(() {
+                                                _myActiveStatus = res;
+                                                _isTogglingPartner = false;
+                                                if (_gym != null) {
+                                                  _gym = _gym!.copyWith(
+                                                    isActivePartner: res,
+                                                    activePartnersCount: res
+                                                        ? _gym!.activePartnersCount + 1
+                                                        : (_gym!.activePartnersCount > 0 ? _gym!.activePartnersCount - 1 : 0),
+                                                  );
+                                                }
+                                              });
+                                            } else {
+                                              setState(() => _isTogglingPartner = false);
+                                            }
+                                          },
+                                          activeColor: AppColors.primary,
+                                          activeTrackColor: AppColors.primary.withOpacity(0.3),
+                                          inactiveThumbColor: Colors.grey,
+                                          inactiveTrackColor: Colors.white12,
+                                        ),
                             ],
                           ),
                           const SizedBox(height: 12),
@@ -380,38 +466,53 @@ class _GymDetailScreenState extends State<GymDetailScreen> {
                               const Text('🔥 ', style: TextStyle(fontSize: 16)),
                               Expanded(
                                 child: Text(
-                                  '${gym.activePartnersCount} people are currently looking for a partner here.',
+                                  isGuest
+                                      ? '3 people are currently looking for a partner here.'
+                                      : '${gym.activePartnersCount} people are currently looking for a partner here.',
                                   style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 13, fontWeight: FontWeight.bold, height: 1.4),
                                 ),
                               ),
                             ],
                           ),
                           const SizedBox(height: 16),
-                          partners.isNotEmpty
-                              ? SizedBox(
-                                  height: 120,
+                          // Partner cards — blurred for guests
+                          if (isGuest || partners.isNotEmpty)
+                            Stack(
+                              children: [
+                                SizedBox(
+                                  height: 110,
                                   child: ListView.builder(
                                     scrollDirection: Axis.horizontal,
-                                    itemCount: partners.length,
+                                    itemCount: displayCount,
                                     itemBuilder: (context, index) {
-                                      final partner = partners[index];
                                       return Padding(
                                         padding: const EdgeInsets.only(right: 12),
                                         child: GestureDetector(
-                                          onTap: () => _confirmMatch(partner),
-                                          child: Container(
+                                          onTap: isGuest
+                                              ? null
+                                              : () => _confirmMatch(partners[index]),
+                                          child: AnimatedContainer(
+                                            duration: const Duration(milliseconds: 150),
                                             width: 82,
-                                            decoration: BoxDecoration(color: const Color(0xFF1C1C1C), borderRadius: BorderRadius.circular(16)),
-                                            padding: const EdgeInsets.symmetric(vertical: 12),
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xFF1C1C1C),
+                                              borderRadius: BorderRadius.circular(16),
+                                              border: Border.all(
+                                                color: Colors.white10,
+                                                width: 1,
+                                              ),
+                                            ),
+                                            padding: const EdgeInsets.symmetric(vertical: 8),
                                             child: Column(
                                               mainAxisAlignment: MainAxisAlignment.center,
+                                              mainAxisSize: MainAxisSize.min,
                                               children: [
                                                 Stack(
                                                   children: [
                                                     Container(
-                                                      width: 44, height: 44,
+                                                      width: 40, height: 40,
                                                       decoration: BoxDecoration(shape: BoxShape.circle, color: AppColors.primary),
-                                                      child: const Center(child: Icon(Icons.person_rounded, color: Colors.black, size: 28)),
+                                                      child: const Center(child: Icon(Icons.person_rounded, color: Colors.black, size: 24)),
                                                     ),
                                                     Positioned(
                                                       right: 0, bottom: 0,
@@ -422,18 +523,32 @@ class _GymDetailScreenState extends State<GymDetailScreen> {
                                                     ),
                                                   ],
                                                 ),
-                                                const SizedBox(height: 8),
+                                                const SizedBox(height: 6),
                                                 Text(
-                                                  partner['name'] ?? '',
-                                                  style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                                                  isGuest ? '••••' : (partners[index]['name'] ?? ''),
+                                                  style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
                                                   maxLines: 1,
                                                   overflow: TextOverflow.ellipsis,
                                                 ),
                                                 const SizedBox(height: 2),
                                                 Text(
-                                                  partner['status'] ?? 'Active Now',
-                                                  style: const TextStyle(color: Color(0xFF4DFF91), fontSize: 8, fontWeight: FontWeight.w600),
+                                                  isGuest ? '••••' : (partners[index]['status'] ?? 'Active Now'),
+                                                  style: const TextStyle(color: Color(0xFF4DFF91), fontSize: 7, fontWeight: FontWeight.w600),
                                                 ),
+                                                if (!isGuest) ...[
+                                                  const SizedBox(height: 4),
+                                                  Text(
+                                                    'TAP TO MATCH',
+                                                    textAlign: TextAlign.center,
+                                                    maxLines: 1,
+                                                    style: TextStyle(
+                                                      color: AppColors.primary,
+                                                      fontSize: 6,
+                                                      fontWeight: FontWeight.w900,
+                                                      letterSpacing: 0.3,
+                                                    ),
+                                                  ),
+                                                ],
                                               ],
                                             ),
                                           ),
@@ -441,14 +556,46 @@ class _GymDetailScreenState extends State<GymDetailScreen> {
                                       );
                                     },
                                   ),
-                                )
-                              : const Padding(
-                                  padding: EdgeInsets.symmetric(vertical: 12),
-                                  child: Text(
-                                    'No other partners active at the moment. Toggle your status above to let others match with you!',
-                                    style: TextStyle(color: Colors.white38, fontSize: 12, height: 1.4),
-                                  ),
                                 ),
+                                // Blur overlay for guest mode
+                                if (isGuest)
+                                  Positioned.fill(
+                                    child: GestureDetector(
+                                      onTap: _showUnlockModal,
+                                      child: ClipRRect(
+                                        borderRadius: BorderRadius.circular(16),
+                                        child: BackdropFilter(
+                                          filter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
+                                          child: Container(
+                                            color: Colors.black.withOpacity(0.3),
+                                            child: Center(
+                                              child: Container(
+                                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                                                decoration: BoxDecoration(
+                                                  color: AppColors.primary,
+                                                  borderRadius: BorderRadius.circular(20),
+                                                ),
+                                                child: const Text(
+                                                  'Sign In to See',
+                                                  style: TextStyle(color: Colors.black, fontSize: 12, fontWeight: FontWeight.w900),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            )
+                          else
+                            const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 12),
+                              child: Text(
+                                'No other partners active at the moment. Toggle your status above to let others match with you!',
+                                style: TextStyle(color: Colors.white38, fontSize: 12, height: 1.4),
+                              ),
+                            ),
                         ],
                       ),
                     );
@@ -570,7 +717,7 @@ class _GymDetailScreenState extends State<GymDetailScreen> {
                   const SizedBox(height: 32),
                 ],
 
-                // Book a Tour Button
+                // Call to Book a Tour Button
                 SizedBox(
                   width: double.infinity, height: 56,
                   child: ElevatedButton(
@@ -579,7 +726,7 @@ class _GymDetailScreenState extends State<GymDetailScreen> {
                       foregroundColor: Colors.black,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
                     ),
-                    onPressed: () {},
+                    onPressed: _callGym,
                     child: const Text('CALL TO BOOK A TOUR', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
                   ),
                 ),

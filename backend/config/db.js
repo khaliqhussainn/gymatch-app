@@ -1,4 +1,7 @@
-require('dotenv').config();
+// Force load from the exact .env path on the live server
+const path = require('path');
+const envPath = path.join(__dirname, '..', '.env');
+require('dotenv').config({ path: envPath, override: true });
 
 module.exports = {
   host: process.env.DB_HOST || 'localhost',

@@ -56,6 +56,68 @@ class _MapScreenState extends State<MapScreen> {
     }
   }
 
+  void _confirmUnmatch(ChatThreadModel thread) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF151515),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: const BorderSide(color: Colors.white12),
+        ),
+        title: const Text(
+          'UNMATCH?',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 18),
+        ),
+        content: Text(
+          'This will permanently delete your match with ${thread.partnerName} and all chat messages. This cannot be undone.',
+          style: const TextStyle(color: Colors.white60, fontSize: 14, height: 1.5),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel', style: TextStyle(color: Colors.white38)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.redAccent,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            onPressed: () async {
+              Navigator.pop(context);
+              final chatProvider = Provider.of<ChatProvider>(context, listen: false);
+              final success = await chatProvider.deleteThread(thread.id);
+              if (mounted) {
+                if (success) {
+                  chatProvider.stopPolling();
+                  setState(() {
+                    _isDetailView = false;
+                    _activeThread = null;
+                  });
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Unmatched from ${thread.partnerName}.'),
+                      backgroundColor: Colors.redAccent,
+                    ),
+                  );
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Failed to unmatch. Please try again.'),
+                      backgroundColor: Colors.redAccent,
+                    ),
+                  );
+                }
+              }
+            },
+            child: const Text('Unmatch', style: TextStyle(fontWeight: FontWeight.w800)),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
@@ -561,6 +623,15 @@ class _MapScreenState extends State<MapScreen> {
             ),
           ],
         ),
+        actions: [
+          // Unmatch button
+          IconButton(
+            icon: const Icon(Icons.person_remove_rounded, color: Colors.white54, size: 22),
+            tooltip: 'Unmatch',
+            onPressed: () => _confirmUnmatch(thread),
+          ),
+          const SizedBox(width: 4),
+        ],
       ),
       body: SafeArea(
         child: Column(

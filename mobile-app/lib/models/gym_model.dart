@@ -15,6 +15,7 @@ class GymModel {
   final double distanceKm;
   final String? coverImage;
   final int activePartnersCount;
+  final bool isFeatured;
 
   // Detail-only fields (populated by getById)
   final List<String> images;
@@ -39,6 +40,7 @@ class GymModel {
     required this.distanceKm,
     this.coverImage,
     this.activePartnersCount = 0,
+    this.isFeatured = false,
     this.images = const [],
     this.amenities = const [],
     this.plans = const [],
@@ -70,6 +72,7 @@ class GymModel {
       distanceKm: _toDouble(json['distance_km']),
       coverImage: json['cover_image'] as String?,
       activePartnersCount: (json['active_partners_count'] as num?)?.toInt() ?? 0,
+      isFeatured: (json['is_featured'] == 1 || json['is_featured'] == true),
       images: (json['images'] as List?)?.cast<String>() ?? [],
       amenities: (json['amenities'] as List?)?.cast<String>() ?? [],
       plans: (json['plans'] as List?)
@@ -98,6 +101,7 @@ class GymModel {
       distanceKm: distanceKm,
       coverImage: coverImage,
       activePartnersCount: activePartnersCount ?? this.activePartnersCount,
+      isFeatured: isFeatured,
       images: images,
       amenities: amenities,
       plans: plans,

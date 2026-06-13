@@ -358,7 +358,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Container(
-        height: 280,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(20),
           image: const DecorationImage(
@@ -376,6 +375,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           padding: const EdgeInsets.all(20),
           child: Column(
+            mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
@@ -391,7 +391,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   size: 26,
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 14),
               
               const Text(
                 'UNLOCK THE COMMUNITY',
@@ -402,7 +402,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   letterSpacing: 1,
                 ),
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 8),
               
               const Text(
                 'Sign up for a free account to turn on your active status and see who is looking for a workout partner right now.',
@@ -413,7 +413,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
               
               SizedBox(
                 width: double.infinity,

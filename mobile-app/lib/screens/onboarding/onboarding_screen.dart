@@ -286,15 +286,15 @@ class _RadarScanningWidget extends StatelessWidget {
                 curve: Curves.easeInOut,
               ),
           
-          // Target nodes (dumbbells)
-          // Top Left (active)
-          _buildTargetNode(x: -55, y: -55, isActive: true),
-          // Bottom Left (active)
-          _buildTargetNode(x: -55, y: 65, isActive: true),
-          // Top Right (inactive)
-          _buildTargetNode(x: 65, y: -75, isActive: false),
-          // Bottom Right (inactive)
-          _buildTargetNode(x: 65, y: 75, isActive: false),
+          // Target nodes with different fitness icons matching the design
+          // Top Left — kettlebell (active, yellow)
+          _buildTargetNode(x: -75, y: -55, isActive: true,  icon: Icons.sports_gymnastics),
+          // Top Right — dumbbell (inactive, white)
+          _buildTargetNode(x: 70,  y: -60, isActive: false, icon: Icons.fitness_center_rounded),
+          // Bottom Left — cardio/runner (inactive, white)
+          _buildTargetNode(x: -80, y: 60,  isActive: false, icon: Icons.directions_run_rounded),
+          // Bottom Right — boxing/MMA (active, yellow)
+          _buildTargetNode(x: 70,  y: 65,  isActive: true,  icon: Icons.sports_mma_rounded),
           
           // Center Moovit/GYMatch logo
           const AppLogo(size: 48)
@@ -342,24 +342,24 @@ class _RadarScanningWidget extends StatelessWidget {
     required double x,
     required double y,
     required bool isActive,
+    IconData icon = Icons.fitness_center_rounded,
   }) {
-    final color = isActive ? AppColors.primary : Colors.white24;
+    final color = isActive ? AppColors.primary : Colors.white54;
     return Transform.translate(
       offset: Offset(x, y),
       child: Container(
-        width: 32,
-        height: 32,
+        width: 36,
+        height: 36,
         decoration: BoxDecoration(
-          color: Colors.black,
+          color: isActive ? AppColors.primary.withOpacity(0.12) : Colors.black,
           shape: BoxShape.circle,
           border: Border.all(color: color, width: 1.5),
+          boxShadow: isActive
+              ? [BoxShadow(color: AppColors.primary.withOpacity(0.35), blurRadius: 10, spreadRadius: 1)]
+              : null,
         ),
         child: Center(
-          child: Icon(
-            Icons.fitness_center_rounded,
-            size: 14,
-            color: color,
-          ),
+          child: Icon(icon, size: 16, color: color),
         ),
       ),
     );
@@ -375,51 +375,48 @@ class _DisciplineCardsWidget extends StatelessWidget {
     required this.onSelected,
   });
 
+  // Map each card index to its yellow and gray icon assets
+  static const _icons = [
+    // index 0 — Bodybuilding
+    (yellow: 'assets/images/onboarding-icon-1-yellow.png',
+     gray:   'assets/images/onboarding-icon-1-gray.png'),
+    // index 1 — CrossFit
+    (yellow: 'assets/images/onboarding-icon-2-yellow.png',
+     gray:   'assets/images/onboarding-icon-2-gray.png'),
+    // index 2 — Cardio
+    (yellow: 'assets/images/onboarding-icon-3-yellow.png',
+     gray:   'assets/images/onboarding-icon-3-gray.png'),
+  ];
+
+  static const _labels = ['Bodybuilding', 'CROSSFIT', 'Cardio'];
+
   @override
   Widget build(BuildContext context) {
     return SizedBox(
       height: 150,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Expanded(
-            child: _buildCard(
-              index: 0,
-              title: 'Bodybuilding',
-              icon: Icons.fitness_center_rounded,
+        children: List.generate(_labels.length, (index) {
+          final isLast = index == _labels.length - 1;
+          return Expanded(
+            child: Row(
+              children: [
+                Expanded(child: _buildCard(index: index)),
+                if (!isLast) const SizedBox(width: 8),
+              ],
             ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: _buildCard(
-              index: 1,
-              title: 'CROSSFIT',
-              icon: Icons.bolt_rounded,
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: _buildCard(
-              index: 2,
-              title: 'Cardio',
-              icon: Icons.directions_run_rounded,
-            ),
-          ),
-        ],
+          );
+        }),
       ),
     );
   }
 
-  Widget _buildCard({
-    required int index,
-    required String title,
-    required IconData icon,
-  }) {
+  Widget _buildCard({required int index}) {
     final isSelected = index == selectedIndex;
-    final accentColor = isSelected ? AppColors.primary : Colors.white30;
-    final textColor = isSelected ? Colors.white : AppColors.onSurfaceMuted;
-    final bgColor = isSelected ? const Color(0xFF111502) : const Color(0xFF141414);
-    final borderColor = isSelected ? AppColors.primary : const Color(0xFF2A2A2A);
+    final bgColor    = isSelected ? const Color(0xFF111502) : const Color(0xFF141414);
+    final borderColor= isSelected ? AppColors.primary       : const Color(0xFF2A2A2A);
+    final textColor  = isSelected ? Colors.white            : AppColors.onSurfaceMuted;
+    final iconAsset  = isSelected ? _icons[index].yellow    : _icons[index].gray;
 
     return GestureDetector(
       onTap: () => onSelected(index),
@@ -429,25 +426,16 @@ class _DisciplineCardsWidget extends StatelessWidget {
         decoration: BoxDecoration(
           color: bgColor,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: borderColor,
-            width: isSelected ? 2.0 : 1.0,
-          ),
+          border: Border.all(color: borderColor, width: isSelected ? 2.0 : 1.0),
           boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: AppColors.primary.withOpacity(0.18),
-                    blurRadius: 16,
-                    spreadRadius: 1,
-                  )
-                ]
+              ? [BoxShadow(color: AppColors.primary.withOpacity(0.18), blurRadius: 16, spreadRadius: 1)]
               : null,
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
-              title,
+              _labels[index],
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: isSelected ? FontWeight.w900 : FontWeight.w500,
@@ -455,11 +443,18 @@ class _DisciplineCardsWidget extends StatelessWidget {
                 letterSpacing: 0.5,
               ),
             ),
-            const SizedBox(height: 16),
-            Icon(
-              icon,
-              size: 38,
-              color: accentColor,
+            const SizedBox(height: 14),
+            Image.asset(
+              iconAsset,
+              width: 44,
+              height: 44,
+              fit: BoxFit.contain,
+              // Gracefully fall back to a simple icon if asset is missing
+              errorBuilder: (_, __, ___) => Icon(
+                Icons.fitness_center_rounded,
+                size: 38,
+                color: isSelected ? AppColors.primary : Colors.white30,
+              ),
             ),
           ],
         ),

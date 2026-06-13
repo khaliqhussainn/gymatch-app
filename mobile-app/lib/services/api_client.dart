@@ -1,6 +1,4 @@
-import 'dart:io';
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class NetworkException implements Exception {
@@ -20,13 +18,10 @@ class ApiClient {
   late final Dio _dio;
   final _secureStorage = const FlutterSecureStorage();
 
-  // For Android Emulator, localhost is 10.0.2.2. For iOS/Web, it is localhost.
-  static String get defaultBaseUrl {
-    if (kIsWeb) {
-      return 'http://localhost:5000/api';
-    }
-    return Platform.isAndroid ? 'http://10.0.2.2:5000/api' : 'http://localhost:5000/api';
-  }
+  // Production backend URL
+  static const String _productionUrl = 'https://gymatch.syedmisbahali.com/api';
+
+  static String get defaultBaseUrl => _productionUrl;
 
   ApiClient._internal() {
     _dio = Dio(BaseOptions(

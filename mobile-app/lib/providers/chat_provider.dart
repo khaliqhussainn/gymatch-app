@@ -187,6 +187,19 @@ class ChatProvider extends ChangeNotifier {
     }
   }
 
+  /// Delete (unmatch) a chat thread.
+  Future<bool> deleteThread(int threadId) async {
+    try {
+      await _api.dio.delete('/chats/threads/$threadId');
+      _threads.removeWhere((t) => t.id == threadId);
+      if (_activeThreadId == threadId) stopPolling();
+      notifyListeners();
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
   /// Start periodic polling for the current active chat details view.
   void startPolling(int threadId) {
     stopPolling();

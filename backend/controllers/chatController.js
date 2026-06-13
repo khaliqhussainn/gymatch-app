@@ -265,3 +265,34 @@ exports.sendMessage = async (req, res) => {
     res.status(500).json({ error: 'Failed to send message.' });
   }
 };
+
+/**
+ * DELETE /api/chats/threads/:threadId (requires auth)
+ * Unmatch — only the requesting user's side is removed.
+ * Both messages and the thread row are deleted.
+ */
+exports.deleteThread = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const threadId = parseInt(req.params.threadId, 10);
+
+    // Verify the user owns this thread
+    const [threadCheck] = await pool.query(
+      'SELECT id, user_1, user_2 FROM chat_threads WHERE id = ? AND (user_1 = ? OR user_2 = ?)',
+      [threadId, userId, userId]
+    );
+
+    if (threadCheck.length === 0) {
+      return res.status(403).json({ error: 'Thread not found or you are not part of it.' });
+    }
+
+    // Delete messages first (FK constraint), then the thread
+    await pool.query('DELETE FROM chat_messages WHERE thread_id = ?', [threadId]);
+    await pool.query('DELETE FROM chat_threads WHERE id = ?', [threadId]);
+
+    res.json({ success: true, message: 'Match removed successfully.' });
+  } catch (error) {
+    console.error('[ChatController.deleteThread]', error);
+    res.status(500).json({ error: 'Failed to remove match.' });
+  }
+};

@@ -119,7 +119,7 @@ class GymProvider extends ChangeNotifier {
   }
 
   /// Fetch gyms near current user location.
-  Future<void> fetchNearbyGyms({String search = '', String? category}) async {
+  Future<void> fetchNearbyGyms({String search = '', String? category, bool featuredOnly = false}) async {
     _state = GymLoadState.loading;
     _errorMessage = '';
     notifyListeners();
@@ -132,6 +132,7 @@ class GymProvider extends ChangeNotifier {
         'radius': _radius,
         if (search.isNotEmpty) 'search': search,
         if (cat.isNotEmpty && cat != 'GYM') 'category': cat,
+        if (featuredOnly) 'featured': 'true',
       });
 
       final List<dynamic> data = response.data['gyms'] ?? [];
@@ -255,12 +256,13 @@ class GymProvider extends ChangeNotifier {
     required String category,
     required bool openNow,
     required String rating,
+    bool featuredOnly = false,
   }) async {
     _radius = radius;
     _selectedCategory = category;
     notifyListeners();
 
-    await fetchNearbyGyms(category: category);
+    await fetchNearbyGyms(category: category, featuredOnly: featuredOnly);
 
     // Client-side open/rating filter
     if (openNow) {
