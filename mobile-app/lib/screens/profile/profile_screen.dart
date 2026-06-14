@@ -602,13 +602,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
       _LocationOption(
         label: 'Copacabana, Brazil',
-        subtitle: 'INPI filing support area',
+        subtitle: 'Brazilian fitness scene',
         latitude: -22.9711,
         longitude: -43.1886,
       ),
       _LocationOption(
         label: 'Washington DC',
-        subtitle: 'Examiner test area',
+        subtitle: 'Washington DC fitness scene',
         latitude: 38.8893,
         longitude: -77.0091,
       ),

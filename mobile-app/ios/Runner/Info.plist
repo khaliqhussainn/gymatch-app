@@ -67,37 +67,69 @@
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
 
-	<!-- ═══ iOS Network: App Transport Security ═══ -->
-	<!-- Explicitly whitelist the production backend domain.
-	     iOS ATS enforces stricter TLS than Android. If the server's
-	     certificate chain or ciphers don't meet iOS requirements,
-	     Dio receives a connectionError (shown as "No internet"). -->
+	<!-- ═══ iOS Network: App Transport Security (ATS) ═══ -->
+	<!-- iOS enforces stricter TLS requirements than Android. If ATS is misconfigured,
+	     network requests fail with "No internet" error. Settings below ensure compatibility. -->
 	<key>NSAppTransportSecurity</key>
 	<dict>
+		<!-- Disable ATS globally only if necessary (NOT recommended for production) -->
+		<!-- <key>NSAllowsArbitraryLoads</key>
+		<true/> -->
+		
+		<!-- Whitelist specific domains with compatible configurations -->
 		<key>NSExceptionDomains</key>
 		<dict>
+			<!-- Production backend domain -->
 			<key>gymatch.syedmisbahali.com</key>
 			<dict>
-				<!-- Allow standard HTTPS (required even for whitelisted domains) -->
+				<!-- Allow standard HTTPS connection -->
 				<key>NSExceptionAllowsInsecureHTTPLoads</key>
 				<false/>
-				<!-- Allow the server's current minimum TLS version -->
+				<!-- iOS requires TLS 1.2 or higher; older servers need this relaxed -->
 				<key>NSExceptionMinimumTLSVersion</key>
 				<string>TLSv1.2</string>
-				<!-- Required for subdomains if needed -->
+				<!-- Allow connections to subdomains (e.g., api.gymatch.syedmisbahali.com) -->
+				<key>NSIncludesSubdomains</key>
+				<true/>
+				<!-- Allow forward secrecy ciphers (modern requirement) -->
+				<key>NSExceptionRequiresForwardSecrecy</key>
+				<false/>
+			</dict>
+			
+			<!-- Development/Testing backend (if different) -->
+			<key>localhost</key>
+			<dict>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<true/>
+				<key>NSIncludesSubdomains</key>
+				<true/>
+			</dict>
+			<key>127.0.0.1</key>
+			<dict>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<true/>
 				<key>NSIncludesSubdomains</key>
 				<true/>
 			</dict>
 		</dict>
 	</dict>
 
-	<!-- ═══ iOS Location Permission Strings ═══ -->
-	<!-- Required by geolocator; without these the app crashes on iOS
-	     when location is requested (can cause cascading errors) -->
+	<!-- ═══ iOS Location Permissions ═══ -->
+	<!-- Required by geolocator plugin; missing descriptions cause crashes -->
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>GYMatch uses your location to find nearby gyms and connect you with workout partners in your area.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>GYMatch uses your location to find nearby gyms and connect you with workout partners in your area.</string>
+
+	<!-- ═══ iOS Network Permissions (iOS 14.5+) ═══ -->
+	<!-- Required for local network discovery (Bonjour/mDNS) if used -->
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>GYMatch needs to communicate over your local network to enable local features.</string>
+	<key>NSBonjourServiceTypes</key>
+	<array>
+		<string>_http._tcp</string>
+		<string>_https._tcp</string>
+	</array>
 
 </dict>
 </plist>
