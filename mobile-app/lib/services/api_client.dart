@@ -29,8 +29,8 @@ class ApiClient {
   ApiClient._internal() {
     _dio = Dio(BaseOptions(
       baseUrl: defaultBaseUrl,
-      connectTimeout: const Duration(seconds: 15),
-      receiveTimeout: const Duration(seconds: 15),
+      connectTimeout: const Duration(seconds: 20),
+      receiveTimeout: const Duration(seconds: 20),
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
@@ -54,7 +54,18 @@ class ApiClient {
             error.type == DioExceptionType.receiveTimeout) {
           errorMsg = 'Connection timeout. Please check your internet connection.';
         } else if (error.type == DioExceptionType.connectionError) {
-          errorMsg = 'No internet connection. Please verify your network settings.';
+          // On iOS, TLS/SSL failures also surface as connectionError.
+          // Inspect the underlying error message to give a better hint.
+          final underlying = error.error?.toString().toLowerCase() ?? '';
+          if (underlying.contains('certificate') ||
+              underlying.contains('ssl') ||
+              underlying.contains('tls') ||
+              underlying.contains('trust') ||
+              underlying.contains('handshake')) {
+            errorMsg = 'Secure connection failed. The server certificate could not be verified.';
+          } else {
+            errorMsg = 'No internet connection. Please verify your network settings.';
+          }
         } else if (error.response != null) {
           final data = error.response?.data;
           if (data is Map && data.containsKey('error')) {

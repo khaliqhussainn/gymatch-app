@@ -612,6 +612,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
         latitude: 38.8893,
         longitude: -77.0091,
       ),
+      _LocationOption(
+        label: 'Toronto, Canada',
+        subtitle: 'Canadian fitness scene',
+        latitude: 43.6695,
+        longitude: -79.3870,
+      ),
     ];
 
     var selectedLabel = gymProvider.locationLabel;

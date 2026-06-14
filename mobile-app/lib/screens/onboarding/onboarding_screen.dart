@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import '../../theme/app_theme.dart';
 import '../../routes/app_router.dart';
 import '../../widgets/app_logo.dart';
+import '../../providers/gym_provider.dart';
 
 class _OnboardingPage {
   final String title;
@@ -26,6 +28,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final _controller = PageController();
   int _currentPage = 0;
   int _selectedDiscipline = 1; // Default to CrossFit (index 1) to match mockup
+  bool _isRequestingLocation = false;
 
   static const _pages = [
     _OnboardingPage(
@@ -50,6 +53,25 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       );
     } else {
       context.go(AppRoutes.login);
+    }
+  }
+
+  Future<void> _requestLocationAndProceed() async {
+    if (_isRequestingLocation) return;
+    setState(() => _isRequestingLocation = true);
+
+    try {
+      final gymProvider = context.read<GymProvider>();
+      // This calls Geolocator.requestPermission() + gets position
+      await gymProvider.refreshDeviceLocation();
+    } catch (_) {
+      // Permission denied or GPS failed — proceed to login anyway
+      // (refreshDeviceLocation falls back to saved/default coords)
+    } finally {
+      if (mounted) {
+        setState(() => _isRequestingLocation = false);
+        context.go(AppRoutes.login);
+      }
     }
   }
 
@@ -181,15 +203,24 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             ),
             elevation: 4,
           ),
-          onPressed: () => context.go(AppRoutes.login),
-          child: const Text(
-            'ALLOW LOCATION ACCESS',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w900,
-              letterSpacing: 0.5,
-            ),
-          ),
+          onPressed: _isRequestingLocation ? null : _requestLocationAndProceed,
+          child: _isRequestingLocation
+              ? const SizedBox(
+                  width: 22,
+                  height: 22,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2.5,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
+                  ),
+                )
+              : const Text(
+                  'ALLOW LOCATION ACCESS',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 0.5,
+                  ),
+                ),
         ),
       )
           .animate()

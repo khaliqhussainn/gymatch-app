@@ -66,5 +66,39 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+
+	<!-- ═══ iOS Network: App Transport Security ═══ -->
+	<!-- Explicitly whitelist the production backend domain.
+	     iOS ATS enforces stricter TLS than Android. If the server's
+	     certificate chain or ciphers don't meet iOS requirements,
+	     Dio receives a connectionError (shown as "No internet"). -->
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSExceptionDomains</key>
+		<dict>
+			<key>gymatch.syedmisbahali.com</key>
+			<dict>
+				<!-- Allow standard HTTPS (required even for whitelisted domains) -->
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<false/>
+				<!-- Allow the server's current minimum TLS version -->
+				<key>NSExceptionMinimumTLSVersion</key>
+				<string>TLSv1.2</string>
+				<!-- Required for subdomains if needed -->
+				<key>NSIncludesSubdomains</key>
+				<true/>
+			</dict>
+		</dict>
+	</dict>
+
+	<!-- ═══ iOS Location Permission Strings ═══ -->
+	<!-- Required by geolocator; without these the app crashes on iOS
+	     when location is requested (can cause cascading errors) -->
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>GYMatch uses your location to find nearby gyms and connect you with workout partners in your area.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>GYMatch uses your location to find nearby gyms and connect you with workout partners in your area.</string>
+
 </dict>
 </plist>
+

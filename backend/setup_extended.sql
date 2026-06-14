@@ -112,7 +112,13 @@ VALUES
   (25, 'ESTRADA MMA ACADEMIA', 'Estrada combat', 'Copacabana, Brazil', 'Rua Barata Ribeiro', -22.9695, -43.1865, 4.5, TRUE, '8:00 am - 9:00 pm', '+55-21-3333-5555', 'MMA'),
   -- More Washington DC Gyms
   (26, 'BETA ACADEMY MMA', 'Beta MMA', 'Washington DC', 'Florida Ave NW', 38.9165, -77.0255, 4.8, TRUE, '6:00 am - 9:30 pm', '+1-202-999-0400', 'MMA'),
-  (27, 'CROSSFIT DUPONT', 'Dupont CrossFit', 'Washington DC', 'Connecticut Ave NW', 38.9098, -77.0430, 4.7, TRUE, '6:00 am - 9:00 pm', '+1-202-999-0500', 'CrossFit');
+  (27, 'CROSSFIT DUPONT', 'Dupont CrossFit', 'Washington DC', 'Connecticut Ave NW', 38.9098, -77.0430, 4.7, TRUE, '6:00 am - 9:00 pm', '+1-202-999-0500', 'CrossFit'),
+  -- Seed gyms in Toronto, Canada
+  (28, 'GOODLIFE FITNESS TORONTO', 'Bay Street Club', 'Toronto, Canada', 'Near Bay & Bloor', 43.6695, -79.3870, 4.7, TRUE, '5:30 am - 11:00 pm', '+1-416-920-7777', 'GYM'),
+  (29, 'CROSSFIT TORONTO', 'Distillery CrossFit', 'Toronto, Canada', 'Near Distillery District', 43.6503, -79.3598, 4.8, TRUE, '6:00 am - 9:00 pm', '+1-416-555-0201', 'CrossFit'),
+  (30, 'EQUINOX TORONTO', 'Yorkville Club', 'Toronto, Canada', 'Bloor St West', 43.6710, -79.3930, 4.9, TRUE, '5:00 am - 11:00 pm', '+1-416-555-0202', 'GYM'),
+  (31, 'YOGA TORONTO', 'Kensington Yoga', 'Toronto, Canada', 'Near Kensington Market', 43.6540, -79.4020, 4.6, TRUE, '7:00 am - 9:00 pm', '+1-416-555-0203', 'Yoga'),
+  (32, 'KOMBAT ARTS MMA', 'Mississauga MMA Hub', 'Toronto, Canada', 'Near Mississauga City Centre', 43.5890, -79.6441, 4.8, TRUE, '8:00 am - 10:00 pm', '+1-905-555-0204', 'MMA');
 
 -- Seed images
 INSERT IGNORE INTO gym_images (gym_id, image_url, sort_order) VALUES
@@ -148,7 +154,15 @@ INSERT IGNORE INTO gym_images (gym_id, image_url, sort_order) VALUES
   (24, 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=800', 0),
   (25, 'https://images.unsplash.com/photo-1549576490-b0b4831ef60a?w=800', 0),
   (26, 'https://images.unsplash.com/photo-1549576490-b0b4831ef60a?w=800', 0),
-  (27, 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=800', 0);
+  (27, 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=800', 0),
+  -- Images for Toronto, Canada gyms
+  (28, 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800', 0),
+  (28, 'https://images.unsplash.com/photo-1540497077202-7c8a3999166f?w=800', 1),
+  (29, 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=800', 0),
+  (30, 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=800', 0),
+  (30, 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=800', 1),
+  (31, 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=800', 0),
+  (32, 'https://images.unsplash.com/photo-1549576490-b0b4831ef60a?w=800', 0);
 
 -- Seed amenities
 INSERT IGNORE INTO gym_amenities (gym_id, name) VALUES
@@ -180,7 +194,13 @@ INSERT IGNORE INTO gym_amenities (gym_id, name) VALUES
   (24, 'Yoga Studio'), (24, 'Meditation'), (24, 'Beach View'),
   (25, 'MMA Ring'), (25, 'Bags'), (25, 'Shower'),
   (26, 'MMA Mat'), (26, 'Bags'), (26, 'Showers'),
-  (27, 'CrossFit Rig'), (27, 'Weights'), (27, 'Parking');
+  (27, 'CrossFit Rig'), (27, 'Weights'), (27, 'Parking'),
+  -- Amenities for Toronto, Canada gyms
+  (28, 'Weights'), (28, 'Cardio'), (28, 'Pool'), (28, 'Sauna'), (28, 'Shower'), (28, 'Locker Room'), (28, 'Parking'),
+  (29, 'CrossFit Rig'), (29, 'Weights'), (29, 'Shower'), (29, 'Parking'),
+  (30, 'Yoga Studio'), (30, 'Spa'), (30, 'Pool'), (30, 'Weights'), (30, 'Cardio'), (30, 'Shower'), (30, 'Locker Room'),
+  (31, 'Yoga Studio'), (31, 'Meditation Room'), (31, 'Free WiFi'),
+  (32, 'MMA Cage'), (32, 'Boxing Bags'), (32, 'Shower'), (32, 'Locker Room');
 
 -- Seed membership plans
 INSERT IGNORE INTO gym_membership_plans (gym_id, name, price, billing_period, features, is_premium) VALUES
@@ -207,7 +227,14 @@ INSERT IGNORE INTO gym_membership_plans (gym_id, name, price, billing_period, fe
   (24, 'YOGA COPACABANA VIP', 50.00, 'mo', '["Daily Beachfront Yoga"]', FALSE),
   (25, 'ESTRADA MMA PASS', 55.00, 'mo', '["MMA & Combat Training"]', FALSE),
   (26, 'BETA MMA MEMBERSHIP', 90.00, 'mo', '["Unlimited Combat Classes"]', TRUE),
-  (27, 'DUPONT PASS', 60.00, 'mo', '["CrossFit Classes","Access"]', FALSE);
+  (27, 'DUPONT PASS', 60.00, 'mo', '["CrossFit Classes","Access"]', FALSE),
+  -- Membership plans for Toronto, Canada gyms
+  (28, 'GOODLIFE BASIC', 40.00, 'mo', '["Basic Access","Cardio & Weights","Standard Hours","Locker & Showers"]', FALSE),
+  (28, 'GOODLIFE PREMIER', 110.00, 'mo', '["Premium Access","Pool & Sauna","Unlimited Classes","Personal Training","Multi-Branch Access"]', TRUE),
+  (29, 'CROSSFIT TORONTO PLAN', 90.00, 'mo', '["Unlimited CrossFit Classes","Coaching","Showers"]', FALSE),
+  (30, 'EQUINOX TORONTO SIGNATURE', 160.00, 'mo', '["All Club Access","Spa & Pool","Unlimited Classes","Guest Passes"]', TRUE),
+  (31, 'KENSINGTON YOGA PASS', 55.00, 'mo', '["Unlimited Yoga Classes","Meditation Room","Free WiFi"]', FALSE),
+  (32, 'KOMBAT ARTS MEMBERSHIP', 95.00, 'mo', '["Unlimited MMA Classes","Combat Training","Locker Room"]', TRUE);
 
 -- Notifications table
 CREATE TABLE IF NOT EXISTS notifications (

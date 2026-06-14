@@ -103,10 +103,10 @@ exports.runMigrations = async (req, res) => {
       log('  ✓ notifications table ready.');
     } catch (e) { log(`  ⚠️ notifications: ${e.message}`); }
 
-    // ── Migration 4: Seed new testing gyms (Venice Beach CA, Copacabana Brazil, Washington DC) ────
-    log('\n[4/4] Checking and seeding new test gyms (IDs 7 to 27)...');
+    // ── Migration 4: Seed new testing gyms (Venice Beach CA, Copacabana Brazil, Washington DC, Toronto Canada) ────
+    log('\n[4/4] Checking and seeding new test gyms (IDs 7 to 32)...');
     try {
-      const [existingGyms] = await pool.query('SELECT id FROM gyms WHERE id IN (7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27)');
+      const [existingGyms] = await pool.query('SELECT id FROM gyms WHERE id IN (7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32)');
       const existingIds = existingGyms.map(g => g.id);
 
       // Seed Gym 7
@@ -357,8 +357,68 @@ exports.runMigrations = async (req, res) => {
         await pool.query(`INSERT IGNORE INTO gym_membership_plans (gym_id, name, price, billing_period, features, is_premium) VALUES (27, 'DUPONT PASS', 60.00, 'mo', '["CrossFit Classes","Access"]', FALSE)`);
         log('  ✓ Gym 27 (CrossFit Dupont) seeded.');
       }
+
+      // Seed Gym 28 (Toronto, Canada)
+      if (!existingIds.includes(28)) {
+        await pool.query(`
+          INSERT INTO gyms (id, name, sub_name, location_name, near_location, latitude, longitude, rating, is_open, open_hours, contact_phone, category, is_featured)
+          VALUES (28, 'GOODLIFE FITNESS TORONTO', 'Bay Street Club', 'Toronto, Canada', 'Near Bay & Bloor', 43.6695, -79.3870, 4.7, TRUE, '5:30 am - 11:00 pm', '+1-416-920-7777', 'GYM', TRUE)
+        `);
+        await pool.query(`INSERT IGNORE INTO gym_images (gym_id, image_url, sort_order) VALUES (28, 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800', 0), (28, 'https://images.unsplash.com/photo-1540497077202-7c8a3999166f?w=800', 1)`);
+        await pool.query(`INSERT IGNORE INTO gym_amenities (gym_id, name) VALUES (28, 'Weights'), (28, 'Cardio'), (28, 'Pool'), (28, 'Sauna'), (28, 'Shower'), (28, 'Locker Room'), (28, 'Parking')`);
+        await pool.query(`INSERT IGNORE INTO gym_membership_plans (gym_id, name, price, billing_period, features, is_premium) VALUES (28, 'GOODLIFE BASIC', 40.00, 'mo', '["Basic Access","Cardio & Weights","Standard Hours","Locker & Showers"]', FALSE), (28, 'GOODLIFE PREMIER', 110.00, 'mo', '["Premium Access","Pool & Sauna","Unlimited Classes","Personal Training","Multi-Branch Access"]', TRUE)`);
+        log('  ✓ Gym 28 (GoodLife Fitness Toronto) seeded.');
+      }
+
+      // Seed Gym 29 (Toronto, Canada)
+      if (!existingIds.includes(29)) {
+        await pool.query(`
+          INSERT INTO gyms (id, name, sub_name, location_name, near_location, latitude, longitude, rating, is_open, open_hours, contact_phone, category, is_featured)
+          VALUES (29, 'CROSSFIT TORONTO', 'Distillery CrossFit', 'Toronto, Canada', 'Near Distillery District', 43.6503, -79.3598, 4.8, TRUE, '6:00 am - 9:00 pm', '+1-416-555-0201', 'CrossFit', FALSE)
+        `);
+        await pool.query(`INSERT IGNORE INTO gym_images (gym_id, image_url, sort_order) VALUES (29, 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=800', 0)`);
+        await pool.query(`INSERT IGNORE INTO gym_amenities (gym_id, name) VALUES (29, 'CrossFit Rig'), (29, 'Weights'), (29, 'Shower'), (29, 'Parking')`);
+        await pool.query(`INSERT IGNORE INTO gym_membership_plans (gym_id, name, price, billing_period, features, is_premium) VALUES (29, 'CROSSFIT TORONTO PLAN', 90.00, 'mo', '["Unlimited CrossFit Classes","Coaching","Showers"]', FALSE)`);
+        log('  ✓ Gym 29 (CrossFit Toronto) seeded.');
+      }
+
+      // Seed Gym 30 (Toronto, Canada)
+      if (!existingIds.includes(30)) {
+        await pool.query(`
+          INSERT INTO gyms (id, name, sub_name, location_name, near_location, latitude, longitude, rating, is_open, open_hours, contact_phone, category, is_featured)
+          VALUES (30, 'EQUINOX TORONTO', 'Yorkville Club', 'Toronto, Canada', 'Bloor St West', 43.6710, -79.3930, 4.9, TRUE, '5:00 am - 11:00 pm', '+1-416-555-0202', 'GYM', TRUE)
+        `);
+        await pool.query(`INSERT IGNORE INTO gym_images (gym_id, image_url, sort_order) VALUES (30, 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=800', 0), (30, 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=800', 1)`);
+        await pool.query(`INSERT IGNORE INTO gym_amenities (gym_id, name) VALUES (30, 'Yoga Studio'), (30, 'Spa'), (30, 'Pool'), (30, 'Weights'), (30, 'Cardio'), (30, 'Shower'), (30, 'Locker Room')`);
+        await pool.query(`INSERT IGNORE INTO gym_membership_plans (gym_id, name, price, billing_period, features, is_premium) VALUES (30, 'EQUINOX TORONTO SIGNATURE', 160.00, 'mo', '["All Club Access","Spa & Pool","Unlimited Classes","Guest Passes"]', TRUE)`);
+        log('  ✓ Gym 30 (Equinox Toronto) seeded.');
+      }
+
+      // Seed Gym 31 (Toronto, Canada)
+      if (!existingIds.includes(31)) {
+        await pool.query(`
+          INSERT INTO gyms (id, name, sub_name, location_name, near_location, latitude, longitude, rating, is_open, open_hours, contact_phone, category, is_featured)
+          VALUES (31, 'YOGA TORONTO', 'Kensington Yoga', 'Toronto, Canada', 'Near Kensington Market', 43.6540, -79.4020, 4.6, TRUE, '7:00 am - 9:00 pm', '+1-416-555-0203', 'Yoga', FALSE)
+        `);
+        await pool.query(`INSERT IGNORE INTO gym_images (gym_id, image_url, sort_order) VALUES (31, 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=800', 0)`);
+        await pool.query(`INSERT IGNORE INTO gym_amenities (gym_id, name) VALUES (31, 'Yoga Studio'), (31, 'Meditation Room'), (31, 'Free WiFi')`);
+        await pool.query(`INSERT IGNORE INTO gym_membership_plans (gym_id, name, price, billing_period, features, is_premium) VALUES (31, 'KENSINGTON YOGA PASS', 55.00, 'mo', '["Unlimited Yoga Classes","Meditation Room","Free WiFi"]', FALSE)`);
+        log('  ✓ Gym 31 (Yoga Toronto) seeded.');
+      }
+
+      // Seed Gym 32 (Toronto, Canada)
+      if (!existingIds.includes(32)) {
+        await pool.query(`
+          INSERT INTO gyms (id, name, sub_name, location_name, near_location, latitude, longitude, rating, is_open, open_hours, contact_phone, category, is_featured)
+          VALUES (32, 'KOMBAT ARTS MMA', 'Mississauga MMA Hub', 'Toronto, Canada', 'Near Mississauga City Centre', 43.5890, -79.6441, 4.8, TRUE, '8:00 am - 10:00 pm', '+1-905-555-0204', 'MMA', FALSE)
+        `);
+        await pool.query(`INSERT IGNORE INTO gym_images (gym_id, image_url, sort_order) VALUES (32, 'https://images.unsplash.com/photo-1549576490-b0b4831ef60a?w=800', 0)`);
+        await pool.query(`INSERT IGNORE INTO gym_amenities (gym_id, name) VALUES (32, 'MMA Cage'), (32, 'Boxing Bags'), (32, 'Shower'), (32, 'Locker Room')`);
+        await pool.query(`INSERT IGNORE INTO gym_membership_plans (gym_id, name, price, billing_period, features, is_premium) VALUES (32, 'KOMBAT ARTS MEMBERSHIP', 95.00, 'mo', '["Unlimited MMA Classes","Combat Training","Locker Room"]', TRUE)`);
+        log('  ✓ Gym 32 (Kombat Arts MMA) seeded.');
+      }
     } catch (seedErr) {
-      fail(`  ⚠️ Seeding CA/Brazil/DC gyms failed: ${seedErr.message}`);
+      fail(`  ⚠️ Seeding CA/Brazil/DC/Canada gyms failed: ${seedErr.message}`);
     }
 
     // ── Summary ─────────────────────────────────────────────────────────
