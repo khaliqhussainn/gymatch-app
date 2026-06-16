@@ -5,34 +5,35 @@ import '../services/api_client.dart';
 import '../services/location_service.dart';
 import '../models/gym_model.dart';
 
-// NetworkException is declared in api_client.dart
-
 enum GymLoadState { idle, loading, loaded, error }
 
 class GymProvider extends ChangeNotifier {
   final ApiClient _api = ApiClient();
   final LocationService _locationService = LocationService();
 
-  // State
   GymLoadState _state = GymLoadState.idle;
   String _errorMessage = '';
   String _selectedCategory = 'GYM';
   double _radius = 15.0;
 
-  // Data
   List<GymModel> _nearbyGyms = [];
   List<GymModel> _searchResults = [];
   List<GymModel> _savedGyms = [];
   GymModel? _selectedGym;
 
-  // Location
   double _userLat = LocationService.fallbackLatitude;
   double _userLng = LocationService.fallbackLongitude;
   String _locationLabel = 'Washington DC';
   bool _useDeviceLocation = true;
   bool _locationLoaded = false;
 
-  // Getters
+  // ── Search history ──────────────────────────────────────────────────────
+  List<String> _searchHistory = [];
+  static const _historyKey = 'search_history';
+  static const _maxHistory = 8;
+
+  List<String> get searchHistory => List.unmodifiable(_searchHistory);
+
   GymLoadState get state => _state;
   String get errorMessage => _errorMessage;
   String get selectedCategory => _selectedCategory;
@@ -48,16 +49,17 @@ class GymProvider extends ChangeNotifier {
   bool get isLoading => _state == GymLoadState.loading;
 
   GymProvider() {
-    _loadLocationPreferences();
+    _loadPreferences();
   }
 
-  Future<void> _loadLocationPreferences() async {
+  Future<void> _loadPreferences() async {
     final prefs = await SharedPreferences.getInstance();
-    _radius = prefs.getDouble('location_radius_km') ?? _radius;
-    _locationLabel = prefs.getString('location_label') ?? _locationLabel;
+    _radius        = prefs.getDouble('location_radius_km') ?? _radius;
+    _locationLabel = prefs.getString('location_label')     ?? _locationLabel;
     _useDeviceLocation = prefs.getBool('use_device_location') ?? _useDeviceLocation;
-    _userLat = prefs.getDouble('location_lat') ?? _userLat;
-    _userLng = prefs.getDouble('location_lng') ?? _userLng;
+    _userLat       = prefs.getDouble('location_lat')       ?? _userLat;
+    _userLng       = prefs.getDouble('location_lng')       ?? _userLng;
+    _searchHistory = prefs.getStringList(_historyKey)      ?? [];
     notifyListeners();
   }
 
@@ -68,6 +70,125 @@ class GymProvider extends ChangeNotifier {
     await prefs.setBool('use_device_location', _useDeviceLocation);
     await prefs.setDouble('location_lat', _userLat);
     await prefs.setDouble('location_lng', _userLng);
+  }
+
+  // ── Search history helpers ───────────────────────────────────────────────
+
+  Future<void> addToHistory(String query) async {
+    final q = query.trim();
+    if (q.isEmpty) return;
+    _searchHistory.removeWhere((h) => h.toLowerCase() == q.toLowerCase());
+    _searchHistory.insert(0, q);
+    if (_searchHistory.length > _maxHistory) {
+      _searchHistory = _searchHistory.take(_maxHistory).toList();
+    }
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList(_historyKey, _searchHistory);
+    notifyListeners();
+  }
+
+  Future<void> removeFromHistory(String query) async {
+    _searchHistory.remove(query);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList(_historyKey, _searchHistory);
+    notifyListeners();
+  }
+
+  Future<void> clearHistory() async {
+    _searchHistory.clear();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_historyKey);
+    notifyListeners();
+  }
+
+  // ── Geocoding: search by city/location name ──────────────────────────────
+
+  /// Geocode a location name using Nominatim via backend proxy (avoids CORS).
+  Future<Map<String, double>?> geocodeLocation(String locationName) async {
+    // Try 3 different approaches in order
+    
+    // Approach 1: Direct Nominatim (works on Android/iOS native)
+    try {
+      final dio = Dio(BaseOptions(
+        connectTimeout: const Duration(seconds: 8),
+        receiveTimeout: const Duration(seconds: 8),
+        headers: {
+          'User-Agent': 'GYMatchApp/1.0 (contact@gymatch.com)',
+          'Accept': 'application/json',
+        },
+      ));
+      final response = await dio.get(
+        'https://nominatim.openstreetmap.org/search',
+        queryParameters: {
+          'q': locationName.trim(),
+          'format': 'json',
+          'limit': '1',
+          'addressdetails': '0',
+        },
+      );
+      final results = response.data;
+      if (results is List && results.isNotEmpty) {
+        final first = results[0] as Map;
+        final lat = double.tryParse(first['lat']?.toString() ?? '');
+        final lng = double.tryParse(first['lon']?.toString() ?? '');
+        if (lat != null && lng != null) return {'lat': lat, 'lng': lng};
+      }
+    } catch (_) {
+      // Fall through to next approach
+    }
+
+    // Approach 2: Photon geocoder (alternative free service, CORS-friendly)
+    try {
+      final dio = Dio(BaseOptions(
+        connectTimeout: const Duration(seconds: 8),
+        receiveTimeout: const Duration(seconds: 8),
+      ));
+      final response = await dio.get(
+        'https://photon.komoot.io/api/',
+        queryParameters: {'q': locationName.trim(), 'limit': '1'},
+      );
+      final features = response.data?['features'];
+      if (features is List && features.isNotEmpty) {
+        final coords = features[0]?['geometry']?['coordinates'];
+        if (coords is List && coords.length >= 2) {
+          final lng = (coords[0] as num).toDouble();
+          final lat = (coords[1] as num).toDouble();
+          return {'lat': lat, 'lng': lng};
+        }
+      }
+    } catch (_) {
+      // Fall through
+    }
+
+    // Approach 3: Our own backend proxy (works everywhere, no CORS)
+    try {
+      final response = await _api.dio.get('/geocode', queryParameters: {'q': locationName.trim()});
+      final data = response.data;
+      if (data?['found'] == true) {
+        final lat = (data['lat'] as num).toDouble();
+        final lng = (data['lng'] as num).toDouble();
+        return {'lat': lat, 'lng': lng};
+      }
+    } catch (_) {
+      // All approaches failed
+    }
+
+    return null;
+  }
+
+  /// Search by location name — geocodes then fetches gyms at that location.
+  Future<bool> searchByLocation(String locationName) async {
+    final coords = await geocodeLocation(locationName);
+    if (coords == null) return false;
+
+    _userLat = coords['lat']!;
+    _userLng = coords['lng']!;
+    _locationLabel = locationName;
+    _useDeviceLocation = false;
+    await _saveLocationPreferences();
+    notifyListeners();
+    await fetchNearbyGyms();
+    return true;
   }
 
   /// Load user GPS position, then fetch nearby gyms.

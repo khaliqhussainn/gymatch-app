@@ -100,3 +100,37 @@ app.use((err, req, res, next) => {
 app.listen(PORT, () => {
   console.log(`GYMatch API running on port ${PORT}`);
 });
+
+// ── Geocoding proxy (avoids CORS issues from mobile/web clients) ────────────
+// GET /geocode?q=Washington
+app.get('/geocode', async (req, res) => {
+  const { q } = req.query;
+  if (!q) return res.status(400).json({ error: 'Query param q is required.' });
+
+  const https = require('https');
+  const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=1`;
+
+  const options = {
+    headers: {
+      'User-Agent': 'GYMatchApp/1.0 (contact@gymatch.com)',
+      'Accept': 'application/json',
+    }
+  };
+
+  https.get(url, options, (apiRes) => {
+    let data = '';
+    apiRes.on('data', chunk => data += chunk);
+    apiRes.on('end', () => {
+      try {
+        const results = JSON.parse(data);
+        if (!results.length) return res.json({ found: false });
+        const { lat, lon } = results[0];
+        res.json({ found: true, lat: parseFloat(lat), lng: parseFloat(lon) });
+      } catch (e) {
+        res.status(500).json({ error: 'Geocoding parse failed.' });
+      }
+    });
+  }).on('error', (e) => {
+    res.status(500).json({ error: 'Geocoding request failed: ' + e.message });
+  });
+});

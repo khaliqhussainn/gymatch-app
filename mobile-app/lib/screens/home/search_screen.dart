@@ -7,6 +7,8 @@ import '../../routes/app_router.dart';
 import '../../providers/gym_provider.dart';
 import '../../models/gym_model.dart';
 
+enum _SearchMode { gym, location }
+
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
 
@@ -16,7 +18,10 @@ class SearchScreen extends StatefulWidget {
 
 class _SearchScreenState extends State<SearchScreen> {
   final TextEditingController _controller = TextEditingController();
+  _SearchMode _mode = _SearchMode.gym;
   bool _hasQuery = false;
+  bool _isSearchingLocation = false;
+  String? _locationError;
 
   @override
   void dispose() {
@@ -25,11 +30,56 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   void _onQueryChanged(String query, GymProvider gymProvider) {
-    setState(() => _hasQuery = query.trim().isNotEmpty);
-    if (query.trim().isNotEmpty) {
+    setState(() {
+      _hasQuery = query.trim().isNotEmpty;
+      _locationError = null;
+    });
+    if (_mode == _SearchMode.gym && query.trim().isNotEmpty) {
       gymProvider.searchGyms(query.trim());
+    }
+  }
+
+  Future<void> _submitSearch(GymProvider gymProvider) async {
+    final query = _controller.text.trim();
+    if (query.isEmpty) return;
+
+    if (_mode == _SearchMode.gym) {
+      // Add to history and search
+      await gymProvider.addToHistory(query);
+      gymProvider.searchGyms(query);
     } else {
-      gymProvider.searchGyms(''); // clears results
+      // Location search
+      setState(() { _isSearchingLocation = true; _locationError = null; });
+      final success = await gymProvider.searchByLocation(query);
+      if (mounted) {
+        setState(() => _isSearchingLocation = false);
+        if (success) {
+          await gymProvider.addToHistory('📍 $query');
+          // Navigate back — home/explore will refresh with new location
+          context.pop();
+        } else {
+          setState(() => _locationError = 'Location "$query" not found. Try a city or address.');
+        }
+      }
+    }
+  }
+
+  void _applyHistoryItem(String item, GymProvider gymProvider) {
+    // Strip location prefix if any
+    final clean = item.startsWith('📍 ') ? item.substring(3) : item;
+    final isLocation = item.startsWith('📍 ');
+
+    setState(() {
+      _mode = isLocation ? _SearchMode.location : _SearchMode.gym;
+      _controller.text = clean;
+      _hasQuery = true;
+      _locationError = null;
+    });
+
+    if (isLocation) {
+      _submitSearch(gymProvider);
+    } else {
+      gymProvider.searchGyms(clean);
     }
   }
 
@@ -45,7 +95,7 @@ class _SearchScreenState extends State<SearchScreen> {
               children: [
                 const SizedBox(height: 16),
 
-                // Search bar row
+                // ── Search bar row ──────────────────────────────────────
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: Row(
@@ -63,23 +113,35 @@ class _SearchScreenState extends State<SearchScreen> {
                           ),
                           child: Row(
                             children: [
-                              const Padding(
-                                padding: EdgeInsets.symmetric(horizontal: 16),
-                                child: Icon(Icons.search_rounded, color: Colors.white38, size: 22),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 16),
+                                child: Icon(
+                                  _mode == _SearchMode.location
+                                      ? Icons.location_on_rounded
+                                      : Icons.search_rounded,
+                                  color: _mode == _SearchMode.location
+                                      ? AppColors.primary
+                                      : Colors.white38,
+                                  size: 22,
+                                ),
                               ),
                               Expanded(
                                 child: TextField(
                                   controller: _controller,
                                   autofocus: true,
                                   style: const TextStyle(color: Colors.white),
+                                  textInputAction: TextInputAction.search,
                                   onChanged: (q) => _onQueryChanged(q, gymProvider),
-                                  decoration: const InputDecoration(
-                                    hintText: 'Search gyms, categories',
-                                    hintStyle: TextStyle(color: Colors.white24, fontSize: 15),
+                                  onSubmitted: (_) => _submitSearch(gymProvider),
+                                  decoration: InputDecoration(
+                                    hintText: _mode == _SearchMode.location
+                                        ? 'Enter city, area or address...'
+                                        : 'Search gyms, categories',
+                                    hintStyle: const TextStyle(color: Colors.white24, fontSize: 15),
                                     border: InputBorder.none,
                                     enabledBorder: InputBorder.none,
                                     focusedBorder: InputBorder.none,
-                                    contentPadding: EdgeInsets.symmetric(vertical: 16),
+                                    contentPadding: const EdgeInsets.symmetric(vertical: 16),
                                   ),
                                 ),
                               ),
@@ -88,13 +150,10 @@ class _SearchScreenState extends State<SearchScreen> {
                                   icon: const Icon(Icons.close_rounded, color: Colors.white38, size: 20),
                                   onPressed: () {
                                     _controller.clear();
-                                    _onQueryChanged('', gymProvider);
+                                    setState(() { _hasQuery = false; _locationError = null; });
+                                    gymProvider.searchGyms('');
                                   },
                                 ),
-                              IconButton(
-                                icon: Icon(Icons.tune_rounded, color: AppColors.primary),
-                                onPressed: () {},
-                              ),
                               const SizedBox(width: 4),
                             ],
                           ),
@@ -104,13 +163,50 @@ class _SearchScreenState extends State<SearchScreen> {
                   ),
                 ),
 
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
 
-                // Body: results or history + suggestions
+                // ── Mode toggle: Gyms | Location ───────────────────────
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Row(
+                    children: [
+                      _buildModeChip('Gyms', Icons.fitness_center_rounded, _SearchMode.gym),
+                      const SizedBox(width: 10),
+                      _buildModeChip('By Location', Icons.location_on_rounded, _SearchMode.location),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 8),
+
+                // ── Location error ─────────────────────────────────────
+                if (_locationError != null)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+                    child: Text(
+                      _locationError!,
+                      style: const TextStyle(color: Colors.redAccent, fontSize: 13),
+                    ),
+                  ),
+
+                const SizedBox(height: 4),
+
+                // ── Body ───────────────────────────────────────────────
                 Expanded(
-                  child: _hasQuery
-                      ? _buildSearchResults(gymProvider)
-                      : _buildDefaultView(),
+                  child: _isSearchingLocation
+                      ? const Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              CircularProgressIndicator(color: Color(0xFFCBF135), strokeWidth: 2),
+                              SizedBox(height: 16),
+                              Text('Finding location...', style: TextStyle(color: Colors.white60)),
+                            ],
+                          ),
+                        )
+                      : _hasQuery && _mode == _SearchMode.gym
+                          ? _buildGymResults(gymProvider)
+                          : _buildDefaultView(gymProvider),
                 ),
               ],
             );
@@ -120,7 +216,46 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
-  Widget _buildSearchResults(GymProvider gymProvider) {
+  Widget _buildModeChip(String label, IconData icon, _SearchMode mode) {
+    final isSelected = _mode == mode;
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _mode = mode;
+          _locationError = null;
+          _hasQuery = _controller.text.trim().isNotEmpty;
+        });
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.primary : const Color(0xFF1A1A1A),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected ? AppColors.primary : Colors.white12,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 15, color: isSelected ? Colors.black : Colors.white54),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: isSelected ? FontWeight.w800 : FontWeight.w500,
+                color: isSelected ? Colors.black : Colors.white70,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGymResults(GymProvider gymProvider) {
     if (gymProvider.isLoading) {
       return const Center(child: CircularProgressIndicator(color: Color(0xFFCBF135), strokeWidth: 2));
     }
@@ -147,14 +282,17 @@ class _SearchScreenState extends State<SearchScreen> {
       itemCount: gymProvider.searchResults.length,
       itemBuilder: (context, index) {
         final gym = gymProvider.searchResults[index];
-        return _buildResultTile(gym);
+        return _buildResultTile(gym, gymProvider);
       },
     );
   }
 
-  Widget _buildResultTile(GymModel gym) {
+  Widget _buildResultTile(GymModel gym, GymProvider gymProvider) {
     return GestureDetector(
-      onTap: () => context.push(AppRoutes.gymDetail, extra: gym.id),
+      onTap: () async {
+        await gymProvider.addToHistory(gym.name);
+        if (mounted) context.push(AppRoutes.gymDetail, extra: gym.id);
+      },
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
         decoration: BoxDecoration(
@@ -164,14 +302,11 @@ class _SearchScreenState extends State<SearchScreen> {
         ),
         child: Row(
           children: [
-            // Gym thumbnail
             ClipRRect(
               borderRadius: const BorderRadius.horizontal(left: Radius.circular(15)),
               child: gym.coverImage != null
                   ? Image.network(
-                      gym.coverImage!,
-                      width: 80, height: 80,
-                      fit: BoxFit.cover,
+                      gym.coverImage!, width: 80, height: 80, fit: BoxFit.cover,
                       errorBuilder: (_, __, ___) => _thumbFallback(),
                     )
                   : _thumbFallback(),
@@ -215,10 +350,8 @@ class _SearchScreenState extends State<SearchScreen> {
             ),
             Padding(
               padding: const EdgeInsets.only(right: 16),
-              child: Text(
-                gym.distanceLabel,
-                style: TextStyle(color: AppColors.primary, fontSize: 13, fontWeight: FontWeight.w900),
-              ),
+              child: Text(gym.distanceLabel,
+                  style: TextStyle(color: AppColors.primary, fontSize: 13, fontWeight: FontWeight.w900)),
             ),
           ],
         ),
@@ -226,92 +359,97 @@ class _SearchScreenState extends State<SearchScreen> {
     ).animate().fadeIn(duration: 300.ms);
   }
 
-  Widget _buildDefaultView() {
-    final suggestions = ['Gold\'s Gym', 'CrossFit', 'Yoga Studio', 'MMA Gym', 'Fitness Club'];
+  Widget _buildDefaultView(GymProvider gymProvider) {
+    final history = gymProvider.searchHistory;
+    final suggestions = ['CrossFit', 'Yoga', 'MMA', 'Bodybuilding', 'Cardio', 'Women\'s Gym'];
 
     return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 16),
-          // History section
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 20),
-            child: Text('SEARCH HISTORY', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900, letterSpacing: 1.2)),
-          ),
-          const SizedBox(height: 16),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Column(
-              children: suggestions.take(4).map((item) => Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: GestureDetector(
-                  onTap: () {
-                    _controller.text = item;
-                    final gymProvider = Provider.of<GymProvider>(context, listen: false);
-                    _onQueryChanged(item, gymProvider);
-                  },
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF141414),
-                      borderRadius: BorderRadius.circular(30),
-                      border: Border.all(color: Colors.white10),
-                    ),
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(item, style: const TextStyle(color: Colors.white70, fontSize: 15, fontWeight: FontWeight.w600)),
-                        const Icon(Icons.access_time_rounded, color: Colors.white38, size: 20),
-                      ],
-                    ),
-                  ),
+          const SizedBox(height: 8),
+
+          // ── Search History ─────────────────────────────────────────
+          if (history.isNotEmpty) ...[
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('RECENT SEARCHES',
+                    style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w900, letterSpacing: 1.2)),
+                TextButton(
+                  onPressed: () => gymProvider.clearHistory(),
+                  child: Text('Clear all', style: TextStyle(color: AppColors.primary, fontSize: 13)),
                 ),
-              )).toList(),
+              ],
             ),
-          ).animate().fadeIn(duration: 400.ms),
-
-          const SizedBox(height: 28),
-
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 20),
-            child: Text('SUGGESTED', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900, letterSpacing: 1.2)),
-          ),
-          const SizedBox(height: 16),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Wrap(
-              spacing: 10, runSpacing: 10,
-              children: suggestions.map((item) => GestureDetector(
-                onTap: () {
-                  _controller.text = item;
-                  final gymProvider = Provider.of<GymProvider>(context, listen: false);
-                  _onQueryChanged(item, gymProvider);
-                },
+            const SizedBox(height: 10),
+            ...history.map((item) => Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: GestureDetector(
+                onTap: () => _applyHistoryItem(item, gymProvider),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                   decoration: BoxDecoration(
                     color: const Color(0xFF141414),
                     borderRadius: BorderRadius.circular(30),
                     border: Border.all(color: Colors.white10),
                   ),
-                  child: Text(item, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                  child: Row(
+                    children: [
+                      Icon(
+                        item.startsWith('📍') ? Icons.location_on_rounded : Icons.access_time_rounded,
+                        color: item.startsWith('📍') ? AppColors.primary : Colors.white38,
+                        size: 18,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(item, style: const TextStyle(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.w500)),
+                      ),
+                      // Delete individual history item
+                      GestureDetector(
+                        onTap: () => gymProvider.removeFromHistory(item),
+                        child: const Icon(Icons.close_rounded, color: Colors.white24, size: 18),
+                      ),
+                    ],
+                  ),
                 ),
-              )).toList(),
-            ),
-          ).animate().fadeIn(delay: 150.ms, duration: 400.ms),
+              ),
+            )).toList(),
+            const SizedBox(height: 24),
+          ],
 
+          // ── Suggestions ────────────────────────────────────────────
+          const Text('SUGGESTED',
+              style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w900, letterSpacing: 1.2)),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 10, runSpacing: 10,
+            children: suggestions.map((item) => GestureDetector(
+              onTap: () {
+                _controller.text = item;
+                setState(() { _mode = _SearchMode.gym; _hasQuery = true; });
+                gymProvider.searchGyms(item);
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF141414),
+                  borderRadius: BorderRadius.circular(30),
+                  border: Border.all(color: Colors.white10),
+                ),
+                child: Text(item, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)),
+              ),
+            )).toList(),
+          ),
           const SizedBox(height: 40),
         ],
       ),
-    );
+    ).animate().fadeIn(duration: 350.ms);
   }
 
-  Widget _thumbFallback() {
-    return Container(
-      width: 80, height: 80,
-      color: const Color(0xFF1A1A1A),
-      child: const Icon(Icons.fitness_center_rounded, color: Colors.white24, size: 28),
-    );
-  }
+  Widget _thumbFallback() => Container(
+    width: 80, height: 80, color: const Color(0xFF1A1A1A),
+    child: const Icon(Icons.fitness_center_rounded, color: Colors.white24, size: 28),
+  );
 }

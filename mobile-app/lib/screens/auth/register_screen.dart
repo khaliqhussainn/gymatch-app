@@ -191,7 +191,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                const SizedBox(height: 48),
+                const SizedBox(height: 16),
+
+                // Back button — top left
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: IconButton(
+                    icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
+                    onPressed: () => context.go(AppRoutes.login),
+                    padding: EdgeInsets.zero,
+                  ),
+                ),
+
+                const SizedBox(height: 12),
 
                 // Logo (smaller on signup screen per mockup)
                 Image.asset(

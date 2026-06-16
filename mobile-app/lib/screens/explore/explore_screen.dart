@@ -31,6 +31,10 @@ class _ExploreScreenState extends State<ExploreScreen> {
   bool _isLocating = false;
   GymModel? _selectedPin;
 
+  // Track last known location to detect external changes (e.g. from search screen)
+  double _lastLat = 0;
+  double _lastLng = 0;
+
   final List<String> _quickFilters = ['Open Now', 'Near me', 'CrossFit', 'MMA'];
 
   @override
@@ -38,8 +42,37 @@ class _ExploreScreenState extends State<ExploreScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final gymProvider = Provider.of<GymProvider>(context, listen: false);
+      gymProvider.addListener(_onProviderLocationChanged);
       gymProvider.initLocation();
+      _lastLat = gymProvider.userLat;
+      _lastLng = gymProvider.userLng;
     });
+  }
+
+  @override
+  void dispose() {
+    final gymProvider = Provider.of<GymProvider>(context, listen: false);
+    gymProvider.removeListener(_onProviderLocationChanged);
+    super.dispose();
+  }
+
+  /// Called whenever GymProvider notifies — check if location changed externally
+  void _onProviderLocationChanged() {
+    final gymProvider = Provider.of<GymProvider>(context, listen: false);
+    final newLat = gymProvider.userLat;
+    final newLng = gymProvider.userLng;
+
+    if ((newLat - _lastLat).abs() > 0.0001 || (newLng - _lastLng).abs() > 0.0001) {
+      _lastLat = newLat;
+      _lastLng = newLng;
+      // Move map camera to the new location
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _mapController.move(LatLng(newLat, newLng), 13.0);
+          setState(() => _selectedPin = null);
+        }
+      });
+    }
   }
 
   Future<void> _applyQuickFilter(int index, GymProvider gymProvider) async {

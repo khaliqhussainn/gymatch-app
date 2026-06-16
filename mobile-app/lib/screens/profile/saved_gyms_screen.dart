@@ -183,7 +183,7 @@ class _SavedGymsScreenState extends State<SavedGymsScreen> {
           const SizedBox(height: 28),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.black, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20))),
-            onPressed: () => context.pop(),
+            onPressed: () => context.go(AppRoutes.home),
             child: const Text('Browse Gyms', style: TextStyle(fontWeight: FontWeight.w800)),
           ),
         ],

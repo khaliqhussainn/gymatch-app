@@ -18,6 +18,8 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedCategoryIndex = 0;
+  double _lastLat = 0;
+  double _lastLng = 0;
 
   final List<String> _categories = [
     'GYM',
@@ -32,8 +34,31 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final gymProvider = Provider.of<GymProvider>(context, listen: false);
+      gymProvider.addListener(_onProviderLocationChanged);
       gymProvider.initLocation();
+      _lastLat = gymProvider.userLat;
+      _lastLng = gymProvider.userLng;
     });
+  }
+
+  @override
+  void dispose() {
+    final gymProvider = Provider.of<GymProvider>(context, listen: false);
+    gymProvider.removeListener(_onProviderLocationChanged);
+    super.dispose();
+  }
+
+  void _onProviderLocationChanged() {
+    final gymProvider = Provider.of<GymProvider>(context, listen: false);
+    final newLat = gymProvider.userLat;
+    final newLng = gymProvider.userLng;
+
+    if ((newLat - _lastLat).abs() > 0.0001 || (newLng - _lastLng).abs() > 0.0001) {
+      _lastLat = newLat;
+      _lastLng = newLng;
+      // Location changed externally (e.g. from search screen) — refresh gyms
+      if (mounted) gymProvider.fetchNearbyGyms();
+    }
   }
 
   @override
