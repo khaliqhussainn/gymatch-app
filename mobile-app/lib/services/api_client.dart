@@ -24,6 +24,8 @@ class ApiClient {
   // Web Application OAuth Client ID (used as serverClientId for Google Sign-In)
   // Android client ID: 466640926142-m7c6snjamq92et7ms36a6o4pmf1srmd5.apps.googleusercontent.com
   static const String googleClientId = '466640926142-s7s1ra0sn74ov37lrrdf96cubjloqh5g.apps.googleusercontent.com';
+  // iOS OAuth Client ID (Replace with the client's iOS Client ID if not using GoogleService-Info.plist)
+  static const String googleClientIdIos = '466640926142-8610coik3rfnead8h6k73usa7th9bq1g.apps.googleusercontent.com';
 
   static String get defaultBaseUrl => _productionUrl;
 

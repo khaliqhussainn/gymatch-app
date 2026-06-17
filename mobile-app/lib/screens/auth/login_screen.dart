@@ -1,3 +1,5 @@
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
@@ -25,6 +27,9 @@ class _LoginScreenState extends State<LoginScreen> {
   String? _passwordError;
 
   final GoogleSignIn _googleSignIn = GoogleSignIn(
+    clientId: (!kIsWeb && (Platform.isIOS || Platform.isMacOS))
+        ? ApiClient.googleClientIdIos
+        : null,
     serverClientId: ApiClient.googleClientId,
   );
 
