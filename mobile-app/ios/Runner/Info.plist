@@ -139,9 +139,8 @@
 			<string>Editor</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<!-- TODO: Replace this with your REVERSED_CLIENT_ID from GoogleService-Info.plist or Google Cloud Console -->
-				<!-- e.g., com.googleusercontent.apps.466640926142-xxxxxxxxxxxxxxxxxxxxxxxx -->
-				<string>com.googleusercontent.apps.466640926142-placeholder</string>
+				<!-- Reversed iOS Client ID from Google Cloud Console -->
+				<string>com.googleusercontent.apps.466640926142-8610coik3rfnead8h6k73usa7th9bq1g</string>
 			</array>
 		</dict>
 	</array>

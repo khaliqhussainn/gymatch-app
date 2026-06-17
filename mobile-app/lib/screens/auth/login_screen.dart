@@ -27,7 +27,8 @@ class _LoginScreenState extends State<LoginScreen> {
   String? _passwordError;
 
   final GoogleSignIn _googleSignIn = GoogleSignIn(
-    clientId: (!kIsWeb && (Platform.isIOS || Platform.isMacOS))
+    // iOS requires the explicit clientId — Android uses the SHA-1 registered in Google Console
+    clientId: (!kIsWeb && !Platform.isAndroid)
         ? ApiClient.googleClientIdIos
         : null,
     serverClientId: ApiClient.googleClientId,
