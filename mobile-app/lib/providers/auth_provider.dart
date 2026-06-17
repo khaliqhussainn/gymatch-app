@@ -59,7 +59,13 @@ class AuthProvider extends ChangeNotifier {
       if (e.error is NetworkException) {
         _errorMessage = e.error.toString();
       } else if (e.response?.statusCode == 401) {
-        _errorMessage = 'Invalid email or password';
+        // Use exact message from backend (unregistered email vs wrong password)
+        final data = e.response?.data;
+        if (data is Map && data.containsKey('error')) {
+          _errorMessage = data['error'];
+        } else {
+          _errorMessage = 'Invalid email or password.';
+        }
       } else if (e.response?.statusCode == 400) {
         final data = e.response?.data;
         if (data is Map && data.containsKey('error')) {

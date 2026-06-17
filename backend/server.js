@@ -22,7 +22,43 @@ app.use('/api/users', userRoutes);
 app.use('/api/chats', chatRoutes);
 app.use('/api/notifications', notificationRoutes);
 
-// ── Migration endpoint (protected by secret key) ──────────────────────────
+// ── Login test endpoint ────────────────────────────────────────────────────
+// GET /auth-check?email=test@test.com
+app.get('/auth-check', async (req, res) => {
+  const { email } = req.query;
+  if (!email) return res.status(400).json({ error: 'email param required' });
+  const pool = require('./config/connection');
+  try {
+    const [rows] = await pool.query(
+      'SELECT id, email, password IS NOT NULL as has_password, google_id IS NOT NULL as is_google FROM users WHERE email = ?',
+      [email.toLowerCase()]
+    );
+    if (!rows.length) return res.json({ exists: false, message: 'No account with this email' });
+    res.json({ exists: true, has_password: !!rows[0].has_password, is_google: !!rows[0].is_google });
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ── Login endpoint test (POST test via GET for quick browser check) ─────────
+// GET /login-check?email=x&password=y
+app.get('/login-check', async (req, res) => {
+  const { email, password } = req.query;
+  if (!email || !password) return res.status(400).json({ error: 'email and password required' });
+  
+  const User = require('./models/User');
+  const bcrypt = require('bcryptjs');
+  
+  try {
+    const user = await User.findByEmail(email.toLowerCase());
+    if (!user) return res.json({ result: 'FAIL', reason: 'User not found' });
+    if (!user.password) return res.json({ result: 'FAIL', reason: 'Google-only account' });
+    const match = await bcrypt.compare(password, user.password);
+    res.json({ result: match ? 'OK' : 'FAIL', reason: match ? 'Password correct' : 'Wrong password' });
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
+});
 // Usage: GET https://gymatch.syedmisbahali.com/migration?secret=YOUR_SECRET
 app.get('/migration', migrationController.runMigrations);
 
