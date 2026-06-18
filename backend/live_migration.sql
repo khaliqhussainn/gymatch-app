@@ -50,3 +50,10 @@ CREATE TABLE IF NOT EXISTS notifications (
 
 -- [6] Verify
 SELECT id, name, is_featured FROM gyms ORDER BY id;
+
+-- [7] Update gym categories — remove 'Women' category, remap to new category list
+UPDATE gyms SET category = 'Functional Fitness' WHERE category = 'Women';
+UPDATE gyms SET sub_name = 'Functional Fitness Hub' WHERE id = 6;
+
+-- [8] Verify category update
+SELECT id, name, category FROM gyms ORDER BY id;

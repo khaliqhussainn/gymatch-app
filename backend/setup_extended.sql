@@ -81,7 +81,7 @@ VALUES
   (3, 'CROSSFIT KARACHI', 'Elite Box', 'Clifton', 'Near Sea View', 24.8040, 67.0300, 4.6, TRUE, '6:00 am - 9:00 pm', '+92-333-1112222', 'CrossFit'),
   (4, 'YOGA STUDIO 5', 'Mind & Body', 'Defence', 'Near DHA Phase 5', 24.8100, 67.0600, 4.9, TRUE, '7:00 am - 8:00 pm', '+92-321-9876543', 'Yoga'),
   (5, 'MMA FIGHTERS GYM', 'Combat Zone', 'PECHS', 'Near Tariq Road', 24.8700, 67.0400, 4.5, FALSE, '9:00 am - 6:00 pm', '+92-333-5556666', 'MMA'),
-  (6, 'LADIES ONLY FITNESS', 'Women''s Health', 'Gulshan', 'Near Gulshan Chowrangi', 24.9200, 67.0900, 4.8, TRUE, '7:00 am - 9:00 pm', '+92-300-4445555', 'Women'),
+  (6, 'LADIES ONLY FITNESS', 'Functional Fitness Hub', 'Gulshan', 'Near Gulshan Chowrangi', 24.9200, 67.0900, 4.8, TRUE, '7:00 am - 9:00 pm', '+92-300-4445555', 'Functional Fitness'),
   -- Seed gyms in Venice Beach, CA
   (7, 'GOLD''S GYM VENICE', 'Mecca of Bodybuilding', 'Venice Beach, CA', 'Near Venice Boardwalk', 33.9922, -118.4718, 4.9, TRUE, '5:00 am - 11:00 pm', '+1-310-392-6004', 'GYM'),
   (8, 'MUSCLE BEACH GYM', 'Venice Beach Recreation Center', 'Venice Beach, CA', 'Outdoor Gym Area', 33.9863, -118.4735, 4.8, TRUE, '8:00 am - 7:00 pm', '+1-310-399-2775', 'GYM'),

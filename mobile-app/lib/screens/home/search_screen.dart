@@ -361,7 +361,7 @@ class _SearchScreenState extends State<SearchScreen> {
 
   Widget _buildDefaultView(GymProvider gymProvider) {
     final history = gymProvider.searchHistory;
-    final suggestions = ['CrossFit', 'Yoga', 'MMA', 'Bodybuilding', 'Cardio', 'Women\'s Gym'];
+    final suggestions = ['CrossFit', 'MMA', 'Yoga', 'Bodybuilding', 'HIIT', 'Boxing', 'Pilates', 'Zumba', 'Powerlifting', 'Calisthenics'];
 
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 20),

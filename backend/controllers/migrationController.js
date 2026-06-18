@@ -421,6 +421,34 @@ exports.runMigrations = async (req, res) => {
       fail(`  ⚠️ Seeding CA/Brazil/DC/Canada gyms failed: ${seedErr.message}`);
     }
 
+    // ── Migration 5: Add profile_image column to profiles ───────────────
+    log('\n[5/6] Checking profile_image column on profiles table...');
+    try {
+      await pool.query(`ALTER TABLE profiles ADD COLUMN profile_image LONGTEXT NULL AFTER availability`);
+      log('  ✓ profile_image column added to profiles.');
+    } catch (e) {
+      if (e.errno === 1060 || (e.message && e.message.includes('Duplicate column'))) {
+        log('  ✓ profile_image column already exists, skipped.');
+      } else {
+        log(`  ⚠️ Could not add profile_image column: ${e.message}`);
+      }
+    }
+
+    // ── Migration 6: Fix gym categories — remove 'Women', remap to new list ─
+    log('\n[6/6] Updating gym categories (removing legacy "Women" category)...');
+    try {
+      const [womenGyms] = await pool.query(`SELECT id, name FROM gyms WHERE category = 'Women'`);
+      if (womenGyms.length > 0) {
+        await pool.query(`UPDATE gyms SET category = 'Functional Fitness' WHERE category = 'Women'`);
+        await pool.query(`UPDATE gyms SET sub_name = 'Functional Fitness Hub' WHERE id = 6`);
+        log(`  ✓ Updated ${womenGyms.length} gym(s) from category "Women" → "Functional Fitness".`);
+      } else {
+        log('  ✓ No gyms with "Women" category found — already up to date.');
+      }
+    } catch (catErr) {
+      fail(`  ⚠️ Category update failed: ${catErr.message}`);
+    }
+
     // ── Summary ─────────────────────────────────────────────────────────
     log('\n═══════════════════════════════════════');
     log('  All migrations completed successfully');

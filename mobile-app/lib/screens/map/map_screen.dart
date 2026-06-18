@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'dart:convert';
 import '../../theme/app_theme.dart';
 import '../../routes/app_router.dart';
 import '../../providers/auth_provider.dart';
@@ -283,18 +284,35 @@ class _MapScreenState extends State<MapScreen> {
                         // Profile Icon
                         GestureDetector(
                           onTap: () => context.go('/main/profile'),
-                          child: Container(
-                            width: 40,
-                            height: 40,
-                            decoration: const BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: Color(0xFF2A2A2A),
-                            ),
-                            child: const Icon(
-                              Icons.person_rounded,
-                              color: Colors.white60,
-                              size: 24,
-                            ),
+                          child: Consumer<AuthProvider>(
+                            builder: (context, authProvider, _) {
+                              final profileImage = authProvider.userProfile?['profileImage'] as String?;
+                              return Container(
+                                width: 40,
+                                height: 40,
+                                decoration: const BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: Color(0xFF2A2A2A),
+                                ),
+                                child: ClipOval(
+                                  child: profileImage != null && profileImage.isNotEmpty
+                                      ? Image.memory(
+                                          base64Decode(profileImage),
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (_, __, ___) => const Icon(
+                                            Icons.person_rounded,
+                                            color: Colors.white60,
+                                            size: 24,
+                                          ),
+                                        )
+                                      : const Icon(
+                                          Icons.person_rounded,
+                                          color: Colors.white60,
+                                          size: 24,
+                                        ),
+                                ),
+                              );
+                            },
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -425,20 +443,35 @@ class _MapScreenState extends State<MapScreen> {
                                             // Profile Avatar stack with status dot
                                             Stack(
                                               children: [
-                                                Container(
-                                                  width: 54,
-                                                  height: 54,
-                                                  decoration: const BoxDecoration(
-                                                    shape: BoxShape.circle,
-                                                    color: Color(0xFF2A2A2A),
-                                                  ),
-                                                  child: const Center(
-                                                    child: Icon(
-                                                      Icons.person_rounded,
-                                                      color: Colors.white60,
-                                                      size: 34,
-                                                    ),
-                                                  ),
+                                                Consumer<AuthProvider>(
+                                                  builder: (context, authProvider, _) {
+                                                    final profileImage = authProvider.userProfile?['profileImage'] as String?;
+                                                    return Container(
+                                                      width: 54,
+                                                      height: 54,
+                                                      decoration: const BoxDecoration(
+                                                        shape: BoxShape.circle,
+                                                        color: Color(0xFF2A2A2A),
+                                                      ),
+                                                      child: ClipOval(
+                                                        child: profileImage != null && profileImage.isNotEmpty
+                                                            ? Image.memory(
+                                                                base64Decode(profileImage),
+                                                                fit: BoxFit.cover,
+                                                                errorBuilder: (_, __, ___) => const Icon(
+                                                                  Icons.person_rounded,
+                                                                  color: Colors.white60,
+                                                                  size: 34,
+                                                                ),
+                                                              )
+                                                            : const Icon(
+                                                                Icons.person_rounded,
+                                                                color: Colors.white60,
+                                                                size: 34,
+                                                              ),
+                                                      ),
+                                                    );
+                                                  },
                                                 ),
                                                 Positioned(
                                                   right: 2,
@@ -575,37 +608,52 @@ class _MapScreenState extends State<MapScreen> {
         title: Row(
           children: [
             // Partner profile avatar
-            Stack(
-              children: [
-                Container(
-                  width: 38,
-                  height: 38,
-                  decoration: const BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Color(0xFF2A2A2A),
-                  ),
-                  child: const Center(
-                    child: Icon(
-                      Icons.person_rounded,
-                      color: Colors.white60,
-                      size: 24,
+            Consumer<AuthProvider>(
+              builder: (context, authProvider, _) {
+                final profileImage = authProvider.userProfile?['profileImage'] as String?;
+                return Stack(
+                  children: [
+                    Container(
+                      width: 38,
+                      height: 38,
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Color(0xFF2A2A2A),
+                      ),
+                      child: ClipOval(
+                        child: profileImage != null && profileImage.isNotEmpty
+                            ? Image.memory(
+                                base64Decode(profileImage),
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => const Icon(
+                                  Icons.person_rounded,
+                                  color: Colors.white60,
+                                  size: 24,
+                                ),
+                              )
+                            : const Icon(
+                                Icons.person_rounded,
+                                color: Colors.white60,
+                                size: 24,
+                              ),
+                      ),
                     ),
-                  ),
-                ),
-                Positioned(
-                  right: 0,
-                  bottom: 0,
-                  child: Container(
-                    width: 10,
-                    height: 10,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF4DFF91),
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.black, width: 1.5),
+                    Positioned(
+                      right: 0,
+                      bottom: 0,
+                      child: Container(
+                        width: 10,
+                        height: 10,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF4DFF91),
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.black, width: 1.5),
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-              ],
+                  ],
+                );
+              },
             ),
             const SizedBox(width: 10),
             Column(

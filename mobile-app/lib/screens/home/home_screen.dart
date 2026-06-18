@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'dart:convert';
 import '../../theme/app_theme.dart';
 import '../../routes/app_router.dart';
+import '../../providers/auth_provider.dart';
 import '../../providers/gym_provider.dart';
 import '../../providers/notification_provider.dart';
 import '../../models/gym_model.dart';
@@ -20,44 +22,62 @@ class _HomeScreenState extends State<HomeScreen> {
   int _selectedCategoryIndex = 0;
   double _lastLat = 0;
   double _lastLng = 0;
+  GymProvider? _gymProvider; // stored ref so dispose() doesn't need context
 
   final List<String> _categories = [
-    'GYM',
+    'All',
     'CrossFit',
     'MMA',
     'Yoga',
-    'Women',
+    'Strength Training',
+    'Bodybuilding',
+    'Powerlifting',
+    'Cardio Training',
+    'HIIT',
+    'Functional Fitness',
+    'Boxing',
+    'Kickboxing',
+    'Pilates',
+    'Zumba',
+    'Cycling / Spinning',
+    'Calisthenics',
+    'Personal Training',
+    'Circuit Training',
+    'Aerobics',
+    'Dance Fitness',
+    'Mobility & Stretching',
   ];
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final gymProvider = Provider.of<GymProvider>(context, listen: false);
-      gymProvider.addListener(_onProviderLocationChanged);
-      gymProvider.initLocation();
-      _lastLat = gymProvider.userLat;
-      _lastLng = gymProvider.userLng;
+      _gymProvider = Provider.of<GymProvider>(context, listen: false);
+      _gymProvider!.addListener(_onProviderLocationChanged);
+      _gymProvider!.initLocation();
+      _lastLat = _gymProvider!.userLat;
+      _lastLng = _gymProvider!.userLng;
     });
   }
 
   @override
   void dispose() {
-    final gymProvider = Provider.of<GymProvider>(context, listen: false);
-    gymProvider.removeListener(_onProviderLocationChanged);
+    _gymProvider?.removeListener(_onProviderLocationChanged);
     super.dispose();
   }
 
   void _onProviderLocationChanged() {
-    final gymProvider = Provider.of<GymProvider>(context, listen: false);
+    // Use stored ref — never touch context here since this fires after dispose too
+    final gymProvider = _gymProvider;
+    if (gymProvider == null || !mounted) return;
+
     final newLat = gymProvider.userLat;
     final newLng = gymProvider.userLng;
 
     if ((newLat - _lastLat).abs() > 0.0001 || (newLng - _lastLng).abs() > 0.0001) {
       _lastLat = newLat;
       _lastLng = newLng;
-      // Location changed externally (e.g. from search screen) — refresh gyms
-      if (mounted) gymProvider.fetchNearbyGyms();
+      gymProvider.fetchNearbyGyms();
     }
   }
 
@@ -120,18 +140,35 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                           GestureDetector(
                             onTap: () => context.go(AppRoutes.profile),
-                            child: Container(
-                              width: 40,
-                              height: 40,
-                              decoration: const BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: Color(0xFF2A2A2A),
-                              ),
-                              child: const Icon(
-                                Icons.person_rounded,
-                                color: Colors.white60,
-                                size: 24,
-                              ),
+                            child: Consumer<AuthProvider>(
+                              builder: (context, authProvider, _) {
+                                final profileImage = authProvider.userProfile?['profileImage'] as String?;
+                                return Container(
+                                  width: 40,
+                                  height: 40,
+                                  decoration: const BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: Color(0xFF2A2A2A),
+                                  ),
+                                  child: ClipOval(
+                                    child: profileImage != null && profileImage.isNotEmpty
+                                        ? Image.memory(
+                                            base64Decode(profileImage),
+                                            fit: BoxFit.cover,
+                                            errorBuilder: (_, __, ___) => const Icon(
+                                              Icons.person_rounded,
+                                              color: Colors.white60,
+                                              size: 24,
+                                            ),
+                                          )
+                                        : const Icon(
+                                            Icons.person_rounded,
+                                            color: Colors.white60,
+                                            size: 24,
+                                          ),
+                                  ),
+                                );
+                              },
                             ),
                           ),
                           const SizedBox(width: 12),
@@ -234,7 +271,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               onTap: () {
                                 setState(() => _selectedCategoryIndex = index);
                                 gymProvider.setCategory(
-                                  index == 0 ? 'GYM' : _categories[index],
+                                  index == 0 ? '' : _categories[index],
                                 );
                               },
                               child: AnimatedContainer(

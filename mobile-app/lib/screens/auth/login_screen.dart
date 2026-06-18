@@ -31,7 +31,8 @@ class _LoginScreenState extends State<LoginScreen> {
     clientId: (!kIsWeb && !Platform.isAndroid)
         ? ApiClient.googleClientIdIos
         : null,
-    serverClientId: ApiClient.googleClientId,
+    // serverClientId is not supported on web — only pass it on mobile
+    serverClientId: kIsWeb ? null : ApiClient.googleClientId,
   );
 
   @override

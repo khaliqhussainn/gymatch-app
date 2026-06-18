@@ -55,7 +55,7 @@ exports.getProfile = async (req, res) => {
     const userId = req.user.userId;
 
     const [rows] = await pool.query(
-      `SELECT u.email, u.role, p.name, p.age, p.gender, p.fitness_goals, p.workout_types, p.availability
+      `SELECT u.email, u.role, p.name, p.age, p.gender, p.fitness_goals, p.workout_types, p.availability, p.profile_image
        FROM users u
        LEFT JOIN profiles p ON u.id = p.user_id
        WHERE u.id = ?`,
@@ -88,6 +88,7 @@ exports.getProfile = async (req, res) => {
       fitnessGoals: userData.fitness_goals || '',
       workoutTypes: userData.workout_types || '',
       availability: userData.availability || '',
+      profileImage: userData.profile_image || null,
       stats: {
         matches: matchRows[0].match_count || 0,
         activeThreads: activeRows[0].active_count || 0
@@ -102,25 +103,35 @@ exports.getProfile = async (req, res) => {
 exports.updateProfile = async (req, res) => {
   try {
     const userId = req.user.userId;
-    const { name, age, gender, fitnessGoals, workoutTypes, availability } = req.body;
+    const { name, age, gender, fitnessGoals, workoutTypes, availability, profileImage } = req.body;
 
     const [existing] = await pool.query(
       'SELECT 1 FROM profiles WHERE user_id = ?',
       [userId]
     );
 
+    // Build dynamic update to only set profileImage when provided
     if (existing.length > 0) {
-      await pool.query(
-        `UPDATE profiles 
-         SET name = ?, age = ?, gender = ?, fitness_goals = ?, workout_types = ?, availability = ?
-         WHERE user_id = ?`,
-        [name || null, age || null, gender || null, fitnessGoals || null, workoutTypes || null, availability || null, userId]
-      );
+      if (profileImage !== undefined) {
+        await pool.query(
+          `UPDATE profiles 
+           SET name = ?, age = ?, gender = ?, fitness_goals = ?, workout_types = ?, availability = ?, profile_image = ?
+           WHERE user_id = ?`,
+          [name || null, age || null, gender || null, fitnessGoals || null, workoutTypes || null, availability || null, profileImage || null, userId]
+        );
+      } else {
+        await pool.query(
+          `UPDATE profiles 
+           SET name = ?, age = ?, gender = ?, fitness_goals = ?, workout_types = ?, availability = ?
+           WHERE user_id = ?`,
+          [name || null, age || null, gender || null, fitnessGoals || null, workoutTypes || null, availability || null, userId]
+        );
+      }
     } else {
       await pool.query(
-        `INSERT INTO profiles (user_id, name, age, gender, fitness_goals, workout_types, availability)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`,
-        [userId, name || null, age || null, gender || null, fitnessGoals || null, workoutTypes || null, availability || null]
+        `INSERT INTO profiles (user_id, name, age, gender, fitness_goals, workout_types, availability, profile_image)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [userId, name || null, age || null, gender || null, fitnessGoals || null, workoutTypes || null, availability || null, profileImage || null]
       );
     }
 

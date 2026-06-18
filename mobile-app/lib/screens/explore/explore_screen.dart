@@ -25,47 +25,49 @@ class _ExploreScreenState extends State<ExploreScreen> {
   int _selectedFilterIndex = 0;
   bool _isOpenNow = true;
   String _selectedDistance = '15 KM';
-  String _selectedCategory = 'GYM';
+  String _selectedCategory = 'All';
   String _selectedRating = '4.0+';
   bool _featuredOnly = false;
   bool _isLocating = false;
   GymModel? _selectedPin;
+  GymProvider? _gymProvider; // stored ref so dispose() doesn't need context
 
   // Track last known location to detect external changes (e.g. from search screen)
   double _lastLat = 0;
   double _lastLng = 0;
 
-  final List<String> _quickFilters = ['Open Now', 'Near me', 'CrossFit', 'MMA'];
+  final List<String> _quickFilters = ['Open Now', 'Near me', 'CrossFit', 'Boxing', 'HIIT', 'Yoga'];
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final gymProvider = Provider.of<GymProvider>(context, listen: false);
-      gymProvider.addListener(_onProviderLocationChanged);
-      gymProvider.initLocation();
-      _lastLat = gymProvider.userLat;
-      _lastLng = gymProvider.userLng;
+      _gymProvider = Provider.of<GymProvider>(context, listen: false);
+      _gymProvider!.addListener(_onProviderLocationChanged);
+      _gymProvider!.initLocation();
+      _lastLat = _gymProvider!.userLat;
+      _lastLng = _gymProvider!.userLng;
     });
   }
 
   @override
   void dispose() {
-    final gymProvider = Provider.of<GymProvider>(context, listen: false);
-    gymProvider.removeListener(_onProviderLocationChanged);
+    _gymProvider?.removeListener(_onProviderLocationChanged);
     super.dispose();
   }
 
   /// Called whenever GymProvider notifies — check if location changed externally
   void _onProviderLocationChanged() {
-    final gymProvider = Provider.of<GymProvider>(context, listen: false);
+    // Use stored ref — never touch context here since this fires after dispose too
+    final gymProvider = _gymProvider;
+    if (gymProvider == null || !mounted) return;
+
     final newLat = gymProvider.userLat;
     final newLng = gymProvider.userLng;
 
     if ((newLat - _lastLat).abs() > 0.0001 || (newLng - _lastLng).abs() > 0.0001) {
       _lastLat = newLat;
       _lastLng = newLng;
-      // Move map camera to the new location
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
           _mapController.move(LatLng(newLat, newLng), 13.0);
@@ -85,13 +87,13 @@ class _ExploreScreenState extends State<ExploreScreen> {
       case 0:
         setState(() {
           _selectedDistance = '${gymProvider.radius.toInt()} KM';
-          _selectedCategory = 'GYM';
+          _selectedCategory = 'All';
           _selectedRating = '';
           _isOpenNow = true;
         });
         await gymProvider.applyFilters(
           radius: gymProvider.radius,
-          category: 'GYM',
+          category: '',
           openNow: true,
           rating: '',
           featuredOnly: _featuredOnly,
@@ -100,13 +102,13 @@ class _ExploreScreenState extends State<ExploreScreen> {
       case 1:
         setState(() {
           _selectedDistance = '5 KM';
-          _selectedCategory = 'GYM';
+          _selectedCategory = 'All';
           _selectedRating = '';
           _isOpenNow = false;
         });
         await gymProvider.applyFilters(
           radius: 5,
-          category: 'GYM',
+          category: '',
           openNow: false,
           rating: '',
           featuredOnly: _featuredOnly,
@@ -130,13 +132,43 @@ class _ExploreScreenState extends State<ExploreScreen> {
       case 3:
         setState(() {
           _selectedDistance = '15 KM';
-          _selectedCategory = 'MMA';
+          _selectedCategory = 'Boxing';
           _selectedRating = '';
           _isOpenNow = false;
         });
         await gymProvider.applyFilters(
           radius: 15,
-          category: 'MMA',
+          category: 'Boxing',
+          openNow: false,
+          rating: '',
+          featuredOnly: _featuredOnly,
+        );
+        break;
+      case 4:
+        setState(() {
+          _selectedDistance = '15 KM';
+          _selectedCategory = 'HIIT';
+          _selectedRating = '';
+          _isOpenNow = false;
+        });
+        await gymProvider.applyFilters(
+          radius: 15,
+          category: 'HIIT',
+          openNow: false,
+          rating: '',
+          featuredOnly: _featuredOnly,
+        );
+        break;
+      case 5:
+        setState(() {
+          _selectedDistance = '15 KM';
+          _selectedCategory = 'Yoga';
+          _selectedRating = '';
+          _isOpenNow = false;
+        });
+        await gymProvider.applyFilters(
+          radius: 15,
+          category: 'Yoga',
           openNow: false,
           rating: '',
           featuredOnly: _featuredOnly,
@@ -184,7 +216,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
                         TextButton(
                           onPressed: () => setModalState(() {
                             _selectedDistance = '15 KM';
-                            _selectedCategory = 'GYM';
+                            _selectedCategory = 'All';
                             _selectedRating = '';
                             _isOpenNow = false;
                             localFeaturedOnly = false;
@@ -229,7 +261,14 @@ class _ExploreScreenState extends State<ExploreScreen> {
                       height: 38,
                       child: ListView(
                         scrollDirection: Axis.horizontal,
-                        children: ['GYM', 'CrossFit', 'Yoga', 'MMA', 'Women'].map((cat) {
+                        children: [
+                          'All', 'CrossFit', 'MMA', 'Yoga', 'Strength Training',
+                          'Bodybuilding', 'Powerlifting', 'Cardio Training', 'HIIT',
+                          'Functional Fitness', 'Boxing', 'Kickboxing', 'Pilates',
+                          'Zumba', 'Cycling / Spinning', 'Calisthenics',
+                          'Personal Training', 'Circuit Training', 'Aerobics',
+                          'Dance Fitness', 'Mobility & Stretching',
+                        ].map((cat) {
                           final isSelected = cat == _selectedCategory;
                           return Padding(
                             padding: const EdgeInsets.only(right: 8),

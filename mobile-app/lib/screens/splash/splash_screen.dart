@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../widgets/app_logo.dart';
 import '../../routes/app_router.dart';
+import '../../providers/auth_provider.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -19,8 +22,31 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _navigate() async {
-    await Future.delayed(const Duration(milliseconds: 2800));
-    if (mounted) {
+    // Wait for splash animation + auto-login check to both complete
+    final authProvider = context.read<AuthProvider>();
+
+    await Future.wait([
+      Future.delayed(const Duration(milliseconds: 2000)),
+      authProvider.tryAutoLogin(),
+    ]);
+
+    if (!mounted) return;
+
+    // 1. Already logged in → go straight to home
+    if (authProvider.isAuthenticated || authProvider.isGuest) {
+      context.go(AppRoutes.home);
+      return;
+    }
+
+    // 2. Check if onboarding was already shown
+    final prefs = await SharedPreferences.getInstance();
+    final seenOnboarding = prefs.getBool('onboarding_seen') ?? false;
+
+    if (!mounted) return;
+
+    if (seenOnboarding) {
+      context.go(AppRoutes.login);
+    } else {
       context.go(AppRoutes.onboarding);
     }
   }

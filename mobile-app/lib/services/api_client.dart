@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:io' show Platform, HttpClient;
 
 class NetworkException implements Exception {
@@ -47,7 +48,7 @@ class ApiClient {
     ));
 
     // iOS-specific HTTP client configuration
-    if (Platform.isIOS) {
+    if (!kIsWeb && Platform.isIOS) {
       _configureiOSHttpClient();
     }
 

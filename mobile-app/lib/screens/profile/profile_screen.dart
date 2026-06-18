@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:convert';
+import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import '../../theme/app_theme.dart';
 import '../../routes/app_router.dart';
 import '../../providers/auth_provider.dart';
@@ -209,22 +213,43 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final profile = authProvider.userProfile;
     final name = profile?['name'] as String?;
     final email = authProvider.email;
+    final profileImage = profile?['profileImage'] as String?;
 
     return Column(
       children: [
-        // Profile image placeholder
-        Container(
-          width: 100,
-          height: 100,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(color: Colors.white24, width: 2),
-            image: const DecorationImage(
-              image: NetworkImage(
-                'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=200',
+        GestureDetector(
+          onTap: () => _showEditProfileBottomSheet(authProvider),
+          child: Stack(
+            alignment: Alignment.bottomRight,
+            children: [
+              Container(
+                width: 100,
+                height: 100,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: AppColors.primary, width: 2),
+                ),
+                child: ClipOval(
+                  child: profileImage != null && profileImage.isNotEmpty
+                      ? Image.memory(
+                          base64Decode(profileImage),
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => _defaultAvatarIcon(),
+                        )
+                      : _defaultAvatarIcon(),
+                ),
               ),
-              fit: BoxFit.cover,
-            ),
+              Container(
+                width: 30,
+                height: 30,
+                decoration: BoxDecoration(
+                  color: AppColors.primary,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.black, width: 2),
+                ),
+                child: const Icon(Icons.camera_alt_rounded, color: Colors.black, size: 16),
+              ),
+            ],
           ),
         ),
         const SizedBox(height: 12),
@@ -249,6 +274,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
           textAlign: TextAlign.center,
         ),
       ],
+    );
+  }
+
+  Widget _defaultAvatarIcon() {
+    return Container(
+      color: const Color(0xFF1E1E1E),
+      child: const Icon(Icons.person_rounded, color: Colors.white38, size: 52),
     );
   }
 
@@ -491,9 +523,50 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final profile = authProvider.userProfile;
     final nameCtrl = TextEditingController(text: profile?['name'] ?? '');
     final ageCtrl = TextEditingController(text: profile?['age']?.toString() ?? '');
-    final goalsCtrl = TextEditingController(text: profile?['fitnessGoals'] ?? '');
-    final workoutTypesCtrl = TextEditingController(text: profile?['workoutTypes'] ?? '');
-    final availabilityCtrl = TextEditingController(text: profile?['availability'] ?? '');
+
+    // Dropdown selections — initialise from saved profile
+    String? selectedGoal = profile?['fitnessGoals']?.toString().isNotEmpty == true
+        ? profile!['fitnessGoals']
+        : null;
+    String? selectedWorkout = profile?['workoutTypes']?.toString().isNotEmpty == true
+        ? profile!['workoutTypes']
+        : null;
+    String? selectedAvailability = profile?['availability']?.toString().isNotEmpty == true
+        ? profile!['availability']
+        : null;
+
+    // Profile image — start with the saved one (base64) or null
+    String? localImageBase64 = profile?['profileImage'] as String?;
+
+    const fitnessGoals = [
+      'Build Muscle', 'Lose Weight', 'Improve Endurance', 'Increase Flexibility',
+      'Stress Relief', 'Athletic Performance', 'Body Recomposition', 'Core Strength',
+      'Improve Posture', 'Rehabilitation', 'Increase Stamina', 'Power & Explosiveness',
+      'Functional Fitness', 'Weight Maintenance', 'Improve Balance', 'Tone Up',
+      'Sports Specific Training', 'Mental Wellness', 'Boost Metabolism', 'General Health',
+      'Train for Competition', 'Master a Discipline',
+    ];
+
+    const workoutTypes = [
+      'CrossFit', 'MMA', 'Yoga', 'Strength Training', 'Bodybuilding',
+      'Powerlifting', 'Cardio Training', 'HIIT', 'Functional Fitness', 'Boxing',
+      'Kickboxing', 'Pilates', 'Zumba', 'Cycling / Spinning', 'Calisthenics',
+      'Personal Training', 'Circuit Training', 'Aerobics', 'Dance Fitness',
+      'Mobility & Stretching', 'Swimming', 'Rowing', 'Rock Climbing',
+    ];
+
+    const availabilityOptions = [
+      'Weekdays – Early Morning (5–8 AM)', 'Weekdays – Morning (8–11 AM)',
+      'Weekdays – Midday (11 AM–2 PM)', 'Weekdays – Afternoon (2–5 PM)',
+      'Weekdays – Evening (5–8 PM)', 'Weekdays – Night (8–11 PM)',
+      'Weekends – Early Morning (5–8 AM)', 'Weekends – Morning (8–11 AM)',
+      'Weekends – Midday (11 AM–2 PM)', 'Weekends – Afternoon (2–5 PM)',
+      'Weekends – Evening (5–8 PM)', 'Weekends – Night (8–11 PM)',
+      'Monday / Wednesday / Friday', 'Tuesday / Thursday / Saturday',
+      'Every Day', 'Flexible – Any Time', 'Flexible – Mornings Only',
+      'Flexible – Evenings Only', 'Flexible – Weekends Only',
+      'Remote / Online Workouts', 'Irregular Schedule',
+    ];
 
     showModalBottomSheet(
       context: context,
@@ -504,91 +577,211 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
       builder: (context) => SafeArea(
         bottom: false,
-        child: Padding(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(context).viewInsets.bottom,
-            left: 20,
-            right: 20,
-            top: 16,
-          ),
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  margin: const EdgeInsets.only(bottom: 24),
-                  decoration: BoxDecoration(
-                    color: Colors.white24,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
+        child: StatefulBuilder(
+          builder: (context, setModalState) {
+            // Capture scaffold messenger from the sheet's context — valid while sheet is open
+            final scaffoldMessenger = ScaffoldMessenger.of(context);
+
+            Future<void> pickImage() async {
+              try {
+                final picker = ImagePicker();
+                final picked = await picker.pickImage(
+                  source: ImageSource.gallery,
+                  maxWidth: 400,
+                  maxHeight: 400,
+                  imageQuality: 80,
+                );
+                if (picked == null) return;
+                final bytes = await picked.readAsBytes();
+                final b64 = base64Encode(bytes);
+                setModalState(() => localImageBase64 = b64);
+              } catch (e) {
+                scaffoldMessenger.showSnackBar(
+                  SnackBar(content: Text('Could not pick image: $e'), backgroundColor: Colors.redAccent),
+                );
+              }
+            }
+
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom,
+                left: 20,
+                right: 20,
+                top: 10,
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // ── Drag handle ───────────────────────────────────
+                    Center(
+                      child: Container(
+                        width: 48, height: 5,
+                        margin: const EdgeInsets.only(bottom: 16),
+                        decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(3)),
+                      ),
+                    ),
+
+                    // ── Header row with close button ─────────────────
+                    Row(
+                      children: [
+                        const Expanded(
+                          child: Text(
+                            'EDIT PROFILE',
+                            style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900, letterSpacing: 1.2),
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: () => Navigator.pop(context),
+                          icon: const Icon(Icons.close_rounded, color: Colors.white54),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+
+                    // ── Profile Image Picker ─────────────────────────
+                    Center(
+                      child: GestureDetector(
+                        onTap: pickImage,
+                        child: Stack(
+                          alignment: Alignment.bottomRight,
+                          children: [
+                            Container(
+                              width: 100, height: 100,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(color: AppColors.primary, width: 2),
+                              ),
+                              child: ClipOval(
+                                child: localImageBase64 != null && localImageBase64!.isNotEmpty
+                                    ? Image.memory(
+                                        base64Decode(localImageBase64!),
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (_, __, ___) => _defaultAvatarIcon(),
+                                      )
+                                    : _defaultAvatarIcon(),
+                              ),
+                            ),
+                            Container(
+                              width: 32, height: 32,
+                              decoration: BoxDecoration(
+                                color: AppColors.primary,
+                                shape: BoxShape.circle,
+                                border: Border.all(color: Colors.black, width: 2),
+                              ),
+                              child: const Icon(Icons.camera_alt_rounded, color: Colors.black, size: 17),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    const Center(
+                      child: Text('Tap to change photo', style: TextStyle(color: Colors.white38, fontSize: 12)),
+                    ),
+                    const SizedBox(height: 20),
+
+                    // ── Name & Age ───────────────────────────────────
+                    _buildEditField(controller: nameCtrl, label: 'Full Name', hint: 'Enter your name'),
+                    _buildEditField(controller: ageCtrl, label: 'Age', hint: 'Enter your age', isNumber: true),
+
+                    // ── Fitness Goals Dropdown ───────────────────────
+                    _buildDropdownField(
+                      label: 'Fitness Goal',
+                      value: selectedGoal,
+                      items: fitnessGoals,
+                      onChanged: (val) => setModalState(() => selectedGoal = val),
+                    ),
+
+                    // ── Workout Types Dropdown ───────────────────────
+                    _buildDropdownField(
+                      label: 'Workout Type',
+                      value: selectedWorkout,
+                      items: workoutTypes,
+                      onChanged: (val) => setModalState(() => selectedWorkout = val),
+                    ),
+
+                    // ── Availability Dropdown ────────────────────────
+                    _buildDropdownField(
+                      label: 'Availability',
+                      value: selectedAvailability,
+                      items: availabilityOptions,
+                      onChanged: (val) => setModalState(() => selectedAvailability = val),
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    // ── Save Button ──────────────────────────────────
+                    SizedBox(
+                      width: double.infinity,
+                      height: 52,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: Colors.black,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
+                        ),
+                        onPressed: () async {
+                          if (nameCtrl.text.trim().isEmpty) {
+                            scaffoldMessenger.showSnackBar(
+                              const SnackBar(content: Text('Name cannot be empty')),
+                            );
+                            return;
+                          }
+                          final ageVal = int.tryParse(ageCtrl.text);
+                          if (ageCtrl.text.isNotEmpty && ageVal == null) {
+                            scaffoldMessenger.showSnackBar(
+                              const SnackBar(content: Text('Please enter a valid age number')),
+                            );
+                            return;
+                          }
+                          // Close the sheet first, then save + show toast on parent scaffold
+                          Navigator.pop(context);
+                          final success = await authProvider.updateProfile(
+                            name: nameCtrl.text.trim(),
+                            age: ageVal,
+                            fitnessGoals: selectedGoal,
+                            workoutTypes: selectedWorkout,
+                            availability: selectedAvailability,
+                            profileImage: localImageBase64,
+                          );
+                          if (mounted) {
+                            ScaffoldMessenger.of(this.context).showSnackBar(
+                              SnackBar(
+                                content: Row(
+                                  children: [
+                                    Icon(
+                                      success ? Icons.check_circle_rounded : Icons.error_rounded,
+                                      color: Colors.black,
+                                      size: 20,
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Text(
+                                      success ? 'Profile updated successfully!' : 'Failed to update profile.',
+                                      style: const TextStyle(fontWeight: FontWeight.w700),
+                                    ),
+                                  ],
+                                ),
+                                backgroundColor: success ? AppColors.primary : Colors.redAccent,
+                                behavior: SnackBarBehavior.floating,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                duration: const Duration(seconds: 3),
+                              ),
+                            );
+                          }
+                        },
+                        child: const Text('Save Changes', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w900)),
+                      ),
+                    ),
+                    const SizedBox(height: 28),
+                  ],
                 ),
               ),
-              const Text(
-                'EDIT PROFILE DETAILS',
-                style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900, letterSpacing: 1.2),
-              ),
-              const SizedBox(height: 20),
-              
-              _buildEditField(controller: nameCtrl, label: 'Full Name', hint: 'Enter your name'),
-              _buildEditField(controller: ageCtrl, label: 'Age', hint: 'Enter your age', isNumber: true),
-              _buildEditField(controller: goalsCtrl, label: 'Fitness Goals', hint: 'e.g. Build muscle, lose weight'),
-              _buildEditField(controller: workoutTypesCtrl, label: 'Workout Types', hint: 'e.g. CrossFit, Yoga, MMA'),
-              _buildEditField(controller: availabilityCtrl, label: 'Availability', hint: 'e.g. Weekdays 6-8 PM'),
-
-              const SizedBox(height: 24),
-              
-              SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.black,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
-                  ),
-                  onPressed: () async {
-                    if (nameCtrl.text.trim().isEmpty) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Name cannot be empty')),
-                      );
-                      return;
-                    }
-                    final ageVal = int.tryParse(ageCtrl.text);
-                    if (ageCtrl.text.isNotEmpty && ageVal == null) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Please enter a valid age number')),
-                      );
-                      return;
-                    }
-
-                    Navigator.pop(context);
-                    final success = await authProvider.updateProfile(
-                      name: nameCtrl.text.trim(),
-                      age: ageVal,
-                      fitnessGoals: goalsCtrl.text.trim(),
-                      workoutTypes: workoutTypesCtrl.text.trim(),
-                      availability: availabilityCtrl.text.trim(),
-                    );
-                    
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(success ? 'Profile updated successfully!' : 'Failed to update profile.')),
-                      );
-                    }
-                  },
-                  child: const Text('Save Changes', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w900)),
-                ),
-              ),
-              const SizedBox(height: 28),
-            ],
-          ),
+            );
+          },
         ),
       ),
-    ),
     );
   }
 
@@ -932,6 +1125,53 @@ class _ProfileScreenState extends State<ProfileScreen> {
         },
       ),
     ),
+    );
+  }
+
+  Widget _buildDropdownField({
+    required String label,
+    required String? value,
+    required List<String> items,
+    required ValueChanged<String?> onChanged,
+  }) {
+    // If saved value isn't in the list, treat as null so hint shows
+    final effectiveValue = items.contains(value) ? value : null;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label.toUpperCase(),
+            style: const TextStyle(color: Colors.white60, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.8),
+          ),
+          const SizedBox(height: 8),
+          Container(
+            decoration: BoxDecoration(
+              color: const Color(0xFF1E1E1E),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.white10),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<String>(
+                value: effectiveValue,
+                isExpanded: true,
+                hint: Text('Select $label', style: const TextStyle(color: Colors.white24, fontSize: 14)),
+                dropdownColor: const Color(0xFF1E1E1E),
+                icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Colors.white38),
+                style: const TextStyle(color: Colors.white, fontSize: 14),
+                items: items.map((item) => DropdownMenuItem(
+                  value: item,
+                  child: Text(item, style: const TextStyle(color: Colors.white, fontSize: 14)),
+                )).toList(),
+                onChanged: onChanged,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 

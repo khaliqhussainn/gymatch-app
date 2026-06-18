@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../theme/app_theme.dart';
 import '../../routes/app_router.dart';
 import '../../widgets/app_logo.dart';
@@ -45,6 +46,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     ),
   ];
 
+  Future<void> _markSeenAndGo(String route) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('onboarding_seen', true);
+    if (mounted) context.go(route);
+  }
+
   void _nextPage() {
     if (_currentPage < _pages.length - 1) {
       _controller.nextPage(
@@ -52,7 +59,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         curve: Curves.easeInOut,
       );
     } else {
-      context.go(AppRoutes.login);
+      _markSeenAndGo(AppRoutes.login);
     }
   }
 
@@ -62,15 +69,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
     try {
       final gymProvider = context.read<GymProvider>();
-      // This calls Geolocator.requestPermission() + gets position
       await gymProvider.refreshDeviceLocation();
     } catch (_) {
       // Permission denied or GPS failed — proceed to login anyway
-      // (refreshDeviceLocation falls back to saved/default coords)
     } finally {
       if (mounted) {
         setState(() => _isRequestingLocation = false);
-        context.go(AppRoutes.login);
+        _markSeenAndGo(AppRoutes.login);
       }
     }
   }
@@ -95,7 +100,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   TextButton(
-                    onPressed: () => context.go(AppRoutes.login),
+                    onPressed: () => _markSeenAndGo(AppRoutes.login),
                     child: const Text(
                       'SKIP',
                       style: TextStyle(

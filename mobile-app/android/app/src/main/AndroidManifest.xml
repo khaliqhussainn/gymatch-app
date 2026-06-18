@@ -4,6 +4,10 @@
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
     <!-- Required for tel: links (phone calls) -->
     <uses-permission android:name="android.permission.CALL_PHONE"/>
+    <!-- Required for image picker — Android 13+ -->
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>
+    <!-- Required for image picker — Android 12 and below -->
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32"/>
     <application
         android:label="GYMatch"
         android:name="${applicationName}"

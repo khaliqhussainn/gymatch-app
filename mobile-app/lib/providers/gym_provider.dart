@@ -13,7 +13,7 @@ class GymProvider extends ChangeNotifier {
 
   GymLoadState _state = GymLoadState.idle;
   String _errorMessage = '';
-  String _selectedCategory = 'GYM';
+  String _selectedCategory = '';
   double _radius = 15.0;
 
   List<GymModel> _nearbyGyms = [];
@@ -252,7 +252,7 @@ class GymProvider extends ChangeNotifier {
         'lng': _userLng,
         'radius': _radius,
         if (search.isNotEmpty) 'search': search,
-        if (cat.isNotEmpty && cat != 'GYM') 'category': cat,
+        if (cat.isNotEmpty && cat != 'GYM' && cat.toUpperCase() != 'ALL') 'category': cat,
         if (featuredOnly) 'featured': 'true',
       });
 

@@ -46,30 +46,39 @@ class AuthProvider extends ChangeNotifier {
       });
 
       final data = response.data;
+
+      // validateStatus accepts 4xx codes without throwing — check for error manually
+      if (response.statusCode != null && response.statusCode! >= 400) {
+        if (data is Map && data.containsKey('error')) {
+          _errorMessage = data['error'];
+        } else {
+          _errorMessage = 'Invalid email or password. Please try again.';
+        }
+        return;
+      }
+
+      // Guard against a missing token in the response
+      if (data == null || data['token'] == null) {
+        _errorMessage = 'Login failed. Please try again.';
+        return;
+      }
+
       _token = data['token'];
       _userId = data['userId'];
       _role = data['role'] ?? 'user';
       _email = email.trim();
       _isGuest = false;
 
-      if (_token != null) {
-        await _apiClient.saveToken(_token!);
-      }
+      await _apiClient.saveToken(_token!);
     } on DioException catch (e) {
       if (e.error is NetworkException) {
         _errorMessage = e.error.toString();
-      } else if (e.response?.statusCode == 401) {
-        // Use exact message from backend (unregistered email vs wrong password)
+      } else if (e.response != null) {
         final data = e.response?.data;
         if (data is Map && data.containsKey('error')) {
           _errorMessage = data['error'];
-        } else {
+        } else if (e.response?.statusCode == 401) {
           _errorMessage = 'Invalid email or password.';
-        }
-      } else if (e.response?.statusCode == 400) {
-        final data = e.response?.data;
-        if (data is Map && data.containsKey('error')) {
-          _errorMessage = data['error'];
         } else {
           _errorMessage = 'Invalid request. Please check your input.';
         }
@@ -347,6 +356,7 @@ class AuthProvider extends ChangeNotifier {
     String? fitnessGoals,
     String? workoutTypes,
     String? availability,
+    String? profileImage,
   }) async {
     if (_isGuest || _token == null) return false;
     _isLoading = true;
@@ -361,6 +371,7 @@ class AuthProvider extends ChangeNotifier {
         'fitnessGoals': fitnessGoals,
         'workoutTypes': workoutTypes,
         'availability': availability,
+        if (profileImage != null) 'profileImage': profileImage,
       });
       await fetchProfile();
       return true;
