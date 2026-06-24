@@ -202,6 +202,43 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> appleLogin(String identityToken, {String? name}) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final response = await _apiClient.dio.post('/auth/apple-login', data: {
+        'token': identityToken,
+        if (name != null && name.isNotEmpty) 'name': name,
+      });
+
+      final data = response.data;
+      _token = data['token'];
+      _userId = data['userId'];
+      _role = data['role'] ?? 'user';
+      _isGuest = false;
+
+      if (_token != null) {
+        await _apiClient.saveToken(_token!);
+        await fetchProfile();
+      }
+    } on DioException catch (e) {
+      if (e.error is NetworkException) {
+        _errorMessage = e.error.toString();
+      } else if (e.response?.statusCode == 401 || e.response?.statusCode == 400) {
+        _errorMessage = 'Apple authentication failed';
+      } else {
+        _errorMessage = 'An error occurred during Apple login. Please try again.';
+      }
+    } catch (e) {
+      _errorMessage = 'An unexpected error occurred. Please try again.';
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
   Future<Map<String, dynamic>?> forgotPassword(String email) async {
     _isLoading = true;
     _errorMessage = null;
@@ -272,8 +309,45 @@ class AuthProvider extends ChangeNotifier {
     _email = null;
     _role = null;
     _isGuest = false;
+    _userProfile = null;
     await _apiClient.deleteToken();
     notifyListeners();
+  }
+
+  /// Permanently delete the authenticated user's account.
+  /// Endpoint: DELETE /users/account
+  Future<bool> deleteAccount() async {
+    if (_isGuest || _token == null) return false;
+
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      await _apiClient.dio.delete('/users/account');
+      await logout();
+      return true;
+    } on DioException catch (e) {
+      if (e.error is NetworkException) {
+        _errorMessage = e.error.toString();
+      } else if (e.response != null) {
+        final data = e.response?.data;
+        if (data is Map && data.containsKey('error')) {
+          _errorMessage = data['error'];
+        } else {
+          _errorMessage = 'Failed to delete account. Please try again.';
+        }
+      } else {
+        _errorMessage = 'Failed to delete account. Please try again.';
+      }
+      return false;
+    } catch (_) {
+      _errorMessage = 'An unexpected error occurred.';
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 
   Future<bool> tryAutoLogin() async {
@@ -357,6 +431,7 @@ class AuthProvider extends ChangeNotifier {
     String? workoutTypes,
     String? availability,
     String? profileImage,
+    String? aboutMe,
   }) async {
     if (_isGuest || _token == null) return false;
     _isLoading = true;
@@ -372,6 +447,7 @@ class AuthProvider extends ChangeNotifier {
         'workoutTypes': workoutTypes,
         'availability': availability,
         if (profileImage != null) 'profileImage': profileImage,
+        'aboutMe': aboutMe,
       });
       await fetchProfile();
       return true;

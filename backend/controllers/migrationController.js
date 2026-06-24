@@ -422,7 +422,7 @@ exports.runMigrations = async (req, res) => {
     }
 
     // ── Migration 5: Add profile_image column to profiles ───────────────
-    log('\n[5/6] Checking profile_image column on profiles table...');
+    log('\n[5/7] Checking profile_image column on profiles table...');
     try {
       await pool.query(`ALTER TABLE profiles ADD COLUMN profile_image LONGTEXT NULL AFTER availability`);
       log('  ✓ profile_image column added to profiles.');
@@ -435,7 +435,7 @@ exports.runMigrations = async (req, res) => {
     }
 
     // ── Migration 6: Fix gym categories — remove 'Women', remap to new list ─
-    log('\n[6/6] Updating gym categories (removing legacy "Women" category)...');
+    log('\n[6/7] Updating gym categories (removing legacy "Women" category)...');
     try {
       const [womenGyms] = await pool.query(`SELECT id, name FROM gyms WHERE category = 'Women'`);
       if (womenGyms.length > 0) {
@@ -447,6 +447,19 @@ exports.runMigrations = async (req, res) => {
       }
     } catch (catErr) {
       fail(`  ⚠️ Category update failed: ${catErr.message}`);
+    }
+
+    // ── Migration 7: Add about_me column to profiles ─────────────────────
+    log('\n[7/7] Checking about_me column on profiles table...');
+    try {
+      await pool.query(`ALTER TABLE profiles ADD COLUMN about_me TEXT NULL AFTER availability`);
+      log('  ✓ about_me column added to profiles.');
+    } catch (e) {
+      if (e.errno === 1060 || (e.message && e.message.includes('Duplicate column'))) {
+        log('  ✓ about_me column already exists, skipped.');
+      } else {
+        log(`  ⚠️ Could not add about_me column: ${e.message}`);
+      }
     }
 
     // ── Summary ─────────────────────────────────────────────────────────

@@ -11,6 +11,7 @@ import '../../routes/app_router.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/gym_provider.dart';
 import '../../models/gym_model.dart';
+import '../../widgets/location_permission_dialog.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -182,6 +183,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               onTap: () => _showLocationPreferencesBottomSheet(
                                 Provider.of<GymProvider>(context, listen: false),
                               ),
+                            ),
+                            const Divider(color: Colors.white10, height: 1, indent: 56),
+                            _buildMenuTile(
+                              icon: Icons.delete_forever_rounded,
+                              label: 'Delete Account',
+                              isLogout: true,
+                              onTap: () => _showDeleteAccountDialog(authProvider),
                             ),
                             const Divider(color: Colors.white10, height: 1, indent: 56),
                             _buildMenuTile(
@@ -519,10 +527,65 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  void _showDeleteAccountDialog(AuthProvider authProvider) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF151515),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text(
+          'Delete Account?',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900),
+        ),
+        content: const Text(
+          'This action is permanent. Your profile, saved gyms, matches, and messages will be deleted and cannot be recovered.',
+          style: TextStyle(color: Colors.white70, height: 1.5),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel', style: TextStyle(color: Colors.white38)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.redAccent,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () async {
+              Navigator.pop(ctx);
+              final success = await authProvider.deleteAccount();
+              if (!mounted) return;
+              if (success) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Your account has been deleted.'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+                context.go(AppRoutes.login);
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      authProvider.errorMessage ?? 'Failed to delete account.',
+                    ),
+                    backgroundColor: Colors.redAccent,
+                  ),
+                );
+              }
+            },
+            child: const Text('Delete Account', style: TextStyle(fontWeight: FontWeight.w800)),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _showEditProfileBottomSheet(AuthProvider authProvider) {
     final profile = authProvider.userProfile;
     final nameCtrl = TextEditingController(text: profile?['name'] ?? '');
     final ageCtrl = TextEditingController(text: profile?['age']?.toString() ?? '');
+    final aboutMeCtrl = TextEditingController(text: profile?['aboutMe'] ?? '');
 
     // Dropdown selections — initialise from saved profile
     String? selectedGoal = profile?['fitnessGoals']?.toString().isNotEmpty == true
@@ -537,7 +600,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     // Profile image — start with the saved one (base64) or null
     String? localImageBase64 = profile?['profileImage'] as String?;
-
     const fitnessGoals = [
       'Build Muscle', 'Lose Weight', 'Improve Endurance', 'Increase Flexibility',
       'Stress Relief', 'Athletic Performance', 'Body Recomposition', 'Core Strength',
@@ -710,6 +772,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       onChanged: (val) => setModalState(() => selectedAvailability = val),
                     ),
 
+                    // ── About Me ─────────────────────────────────────
+                    _buildEditField(
+                      controller: aboutMeCtrl,
+                      label: 'About Me',
+                      hint: 'Tell potential partners about yourself...',
+                      maxLines: 4,
+                    ),
+
                     const SizedBox(height: 24),
 
                     // ── Save Button ──────────────────────────────────
@@ -745,6 +815,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             workoutTypes: selectedWorkout,
                             availability: selectedAvailability,
                             profileImage: localImageBase64,
+                            aboutMe: aboutMeCtrl.text.trim().isNotEmpty ? aboutMeCtrl.text.trim() : null,
                           );
                           if (mounted) {
                             ScaffoldMessenger.of(this.context).showSnackBar(
@@ -832,6 +903,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
         child: StatefulBuilder(
           builder: (context, setModalState) {
           Future<void> useCurrentLocation() async {
+            final shouldContinue = await showLocationPermissionRationale(context);
+            if (!shouldContinue) return;
+
             setModalState(() => isRefreshingLocation = true);
             try {
               await gymProvider.refreshDeviceLocation();
@@ -1180,6 +1254,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     required String label,
     required String hint,
     bool isNumber = false,
+    int maxLines = 1,
   }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
@@ -1200,7 +1275,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
             child: TextField(
               controller: controller,
               style: const TextStyle(color: Colors.white, fontSize: 14),
-              keyboardType: isNumber ? TextInputType.number : TextInputType.text,
+              keyboardType: isNumber
+                  ? TextInputType.number
+                  : (maxLines > 1 ? TextInputType.multiline : TextInputType.text),
+              maxLines: maxLines,
               decoration: InputDecoration(
                 hintText: hint,
                 hintStyle: const TextStyle(color: Colors.white24, fontSize: 14),

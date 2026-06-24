@@ -6,6 +6,13 @@ const authMiddleware = require('../middleware/authMiddleware');
 // Profile routes (requires auth)
 router.get('/profile', authMiddleware.authenticate, userController.getProfile);
 router.put('/profile', authMiddleware.authenticate, userController.updateProfile);
+router.delete('/account', authMiddleware.authenticate, userController.deleteAccount);
+
+// Public partner profile (any authenticated user can view another user's profile)
+router.get('/:id/profile', authMiddleware.optionalAuthenticate, userController.getPartnerProfile);
+
+// Partner search
+router.get('/search', userController.searchPartners);
 
 // @route   GET api/users
 // @desc    Get all users

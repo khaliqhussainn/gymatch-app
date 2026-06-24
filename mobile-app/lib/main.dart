@@ -93,9 +93,7 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     // Setup deep link listener
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_deepLinkSubscription == null) {
-        _deepLinkSubscription = _deepLinkService.setupDeepLinkListener(context);
-      }
+      _deepLinkSubscription ??= _deepLinkService.setupDeepLinkListener(context);
     });
 
     return MaterialApp.router(

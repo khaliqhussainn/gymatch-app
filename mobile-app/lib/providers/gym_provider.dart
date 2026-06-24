@@ -26,6 +26,8 @@ class GymProvider extends ChangeNotifier {
   String _locationLabel = 'Washington DC';
   bool _useDeviceLocation = true;
   bool _locationLoaded = false;
+  LocationPermissionStatus _locationPermissionStatus = LocationPermissionStatus.unknown;
+  bool _usingFallbackLocation = false;
 
   // ── Search history ──────────────────────────────────────────────────────
   List<String> _searchHistory = [];
@@ -47,6 +49,8 @@ class GymProvider extends ChangeNotifier {
   String get locationLabel => _locationLabel;
   bool get useDeviceLocation => _useDeviceLocation;
   bool get isLoading => _state == GymLoadState.loading;
+  LocationPermissionStatus get locationPermissionStatus => _locationPermissionStatus;
+  bool get usingFallbackLocation => _usingFallbackLocation;
 
   GymProvider() {
     _loadPreferences();
@@ -196,10 +200,8 @@ class GymProvider extends ChangeNotifier {
     if (_locationLoaded) return;
     if (_useDeviceLocation) {
       try {
-        final position = await _locationService.getCurrentPosition();
-        _userLat = position.latitude;
-        _userLng = position.longitude;
-        _locationLabel = 'Current Location';
+        final result = await _locationService.getCurrentPosition(requestIfDenied: false);
+        _applyLocationResult(result);
         await _saveLocationPreferences();
       } catch (_) {
         // Use saved/fallback coordinates silently
@@ -209,16 +211,40 @@ class GymProvider extends ChangeNotifier {
     await fetchNearbyGyms();
   }
 
-  Future<void> refreshDeviceLocation() async {
-    final position = await _locationService.getCurrentPosition();
-    _userLat = position.latitude;
-    _userLng = position.longitude;
-    _locationLabel = 'Current Location';
+  Future<void> refreshDeviceLocation({bool requestPermission = true}) async {
+    final result = await _locationService.getCurrentPosition(
+      requestIfDenied: requestPermission,
+    );
+    _applyLocationResult(result);
     _useDeviceLocation = true;
     _locationLoaded = true;
     await _saveLocationPreferences();
     notifyListeners();
     await fetchNearbyGyms();
+  }
+
+  Future<void> retryLocationPermission() async {
+    final status = await _locationService.requestPermission();
+    _locationPermissionStatus = status;
+    if (status == LocationPermissionStatus.granted) {
+      await refreshDeviceLocation(requestPermission: false);
+    } else {
+      notifyListeners();
+    }
+  }
+
+  Future<void> openLocationSettings() async {
+    await _locationService.openAppSettings();
+  }
+
+  void _applyLocationResult(LocationResult result) {
+    _userLat = result.position.latitude;
+    _userLng = result.position.longitude;
+    _locationPermissionStatus = result.status;
+    _usingFallbackLocation = result.isFallback;
+    if (!result.isFallback) {
+      _locationLabel = 'Current Location';
+    }
   }
 
   Future<void> updateLocationPreferences({
@@ -417,8 +443,8 @@ class GymProvider extends ChangeNotifier {
       // Invert y because screen y increases downward
       final y = latRange > 0 ? 1.0 - (gym.latitude - minLat) / latRange : 0.5;
       return {
-        'x': (x as double).clamp(0.05, 0.95),
-        'y': (y as double).clamp(0.05, 0.95),
+        'x': x.clamp(0.05, 0.95),
+        'y': y.clamp(0.05, 0.95),
         'type': 'gym',
         'gym': gym,
       };

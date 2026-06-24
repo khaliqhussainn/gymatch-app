@@ -4,6 +4,7 @@ const gymController = require('../controllers/gymController');
 const authMiddleware = require('../middleware/authMiddleware');
 
 // Public routes (no auth required — guests can browse gyms)
+router.get('/places-nearby', gymController.getPlacesNearby);
 router.get('/', authMiddleware.optionalAuthenticate, gymController.getNearby);
 
 // /favorites must come before /:id to avoid 'favorites' being parsed as an id

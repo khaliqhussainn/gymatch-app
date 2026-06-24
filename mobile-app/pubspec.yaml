@@ -22,11 +22,13 @@ dependencies:
   flutter_secure_storage: ^9.0.0
   geolocator: ^11.0.0
   google_sign_in: ^6.2.1
+  sign_in_with_apple: ^6.1.4
   flutter_map: ^7.0.2
   latlong2: ^0.9.1
   app_links: ^6.3.2
   share_plus: ^10.0.0
   image_picker: ^1.1.2
+  google_maps_flutter: ^2.9.0
 
 dev_dependencies:
   flutter_test:

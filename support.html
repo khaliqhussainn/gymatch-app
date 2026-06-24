@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GYMatch Deployment Support</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f7f8f5;
+      --text: #151515;
+      --muted: #5f665c;
+      --card: #ffffff;
+      --accent: #9fcf19;
+      --border: #e2e6dc;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Arial, Helvetica, sans-serif;
+      line-height: 1.6;
+    }
+
+    main {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 40px 20px 64px;
+    }
+
+    header {
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 28px;
+      padding-bottom: 20px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 36px;
+      line-height: 1.15;
+    }
+
+    h2 {
+      margin-top: 32px;
+      font-size: 22px;
+      line-height: 1.25;
+    }
+
+    h3 {
+      margin-top: 26px;
+      font-size: 18px;
+      line-height: 1.3;
+    }
+
+    p, li {
+      font-size: 16px;
+    }
+
+    .updated {
+      color: var(--muted);
+      margin: 0;
+    }
+
+    .notice {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-left: 5px solid var(--accent);
+      border-radius: 8px;
+      padding: 16px 18px;
+      margin: 24px 0;
+    }
+
+    a {
+      color: #426000;
+      font-weight: 700;
+    }
+
+    ul {
+      padding-left: 22px;
+    }
+
+    code {
+      background: #eef1e8;
+      padding: 2px 4px;
+      border-radius: 4px;
+      font-size: 15px;
+    }
+
+    .grid {
+      display: grid;
+      gap: 16px;
+    }
+
+    .grid-2 {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    @media (max-width: 700px) {
+      .grid-2 {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>Deployment Support</h1>
+      <p class="updated">Last updated: June 20, 2026</p>
+    </header>
+
+    <p>
+      This page provides deployment guidance for submitting the GYMatch mobile app to the Google Play Store and Apple App Store.
+      It includes required store assets, build checklist items, review preparation, and common troubleshooting steps.
+    </p>
+
+    <div class="notice">
+      Use this page as a reference while preparing release builds, app store metadata, and privacy compliance materials.
+    </div>
+
+    <h2>Release Readiness Checklist</h2>
+    <ul>
+      <li>Confirm app version numbers are updated for release: <code>versionCode</code> / <code>buildNumber</code>.</li>
+      <li>Verify the app bundle/package identifier is correct for each platform.</li>
+      <li>Test the production build on real devices and emulators.</li>
+      <li>Confirm privacy policy, support email, and terms are available and accurate.</li>
+      <li>Ensure third-party sign-in and location permissions work in production mode.</li>
+      <li>Confirm app store screenshots, icons, and description match the published experience.</li>
+    </ul>
+
+    <h2>Required App Metadata</h2>
+    <p>Prepare the following data before submitting to either store:</p>
+    <ul>
+      <li>App name and subtitle/title.</li>
+      <li>Short description and full description.</li>
+      <li>App category and target audience.</li>
+      <li>Privacy policy URL (for example, <code>https://gymatch.com/privacy-policy</code>).</li>
+      <li>Support contact email (for example, <code>support@gymatch.com</code>).</li>
+      <li>App screenshots for required device types.</li>
+      <li>App icon and feature graphic / promotional images.</li>
+    </ul>
+
+    <h2>Google Play Store</h2>
+    <h3>Key steps</h3>
+    <ul>
+      <li>Use Android App Bundle (.aab) for the Play Store if possible.</li>
+      <li>Enable Google Play App Signing and upload the correct signing key.</li>
+      <li>Confirm the package name matches the app's package settings.</li>
+      <li>Upload the correct privacy policy URL and contact information in the Play Console.</li>
+      <li>Complete the Data Safety form and declare all required permissions.</li>
+      <li>Set the content rating and target audience accurately.</li>
+      <li>Review the Play Store policy checklist for restricted content, location usage, and user data handling.</li>
+    </ul>
+
+    <h3>Build & signing</h3>
+    <ul>
+      <li>Run a release build on Android: <code>flutter build appbundle --release</code> or relevant Gradle command.</li>
+      <li>Use the production signing key and keep the upload key secure.</li>
+      <li>Increment <code>versionCode</code> for every new release.</li>
+      <li>Test the signed release APK/AAB on a physical device before upload.</li>
+    </ul>
+
+    <h2>Apple App Store</h2>
+    <h3>Key steps</h3>
+    <ul>
+      <li>Use App Store Connect to create a new app record and attach the correct bundle ID.</li>
+      <li>Use TestFlight for beta testing and App Store review prep.</li>
+      <li>Provide a valid support email and marketing URL if available.</li>
+      <li>Complete App Privacy details and any required questionnaire about data collection.</li>
+      <li>Include a privacy policy URL and clearly describe how location, sign-in, and messaging features are used.</li>
+      <li>Upload required screenshots for all supported device families.</li>
+      <li>Ensure the app uses permission descriptions in Info.plist for location and camera/microphone access if needed.</li>
+    </ul>
+
+    <h3>Build & signing</h3>
+    <ul>
+      <li>Use the correct distribution certificate and provisioning profile.</li>
+      <li>Set the build number for every App Store submission.</li>
+      <li>Use <code>flutter build ios --release</code> or Xcode archive with the app set to release configuration.</li>
+      <li>Verify the app runs in a signed, production configuration before upload.</li>
+      <li>Confirm the bundle ID and App Store Connect record are aligned.</li>
+    </ul>
+
+    <h2>Testing and Review</h2>
+    <ul>
+      <li>Validate app behavior for login, onboarding, location access, and chat features.</li>
+      <li>Use internal test tracks on Google Play and TestFlight on Apple for reviewer testing.</li>
+      <li>Verify the app does not crash on supported devices and handles permission denial gracefully.</li>
+      <li>Ensure push notifications and backend connectivity work after signing in release mode.</li>
+      <li>Keep release notes clear and mention any known limitations or new functionality.</li>
+    </ul>
+
+    <h2>Common Deployment Issues</h2>
+    <ul>
+      <li>Missing or invalid privacy policy URL in the store listing.</li>
+      <li>Incorrect package name or bundle ID between app configuration and store settings.</li>
+      <li>Unsubmitted Data Safety form on Google Play.</li>
+      <li>Bad permissions descriptions or missing Info.plist keys for iOS.</li>
+      <li>Release build crashes due to debug-only code, API keys, or environment configuration.</li>
+      <li>Expired certificates or provisioning profiles for Apple builds.</li>
+      <li>App metadata that does not match the actual app experience.</li>
+    </ul>
+
+    <h2>Helpful Links</h2>
+    <div class="grid grid-2">
+      <div>
+        <h3>Google Play</h3>
+        <ul>
+          <li><a href="https://support.google.com/googleplay/android-developer/" target="_blank" rel="noreferrer">Google Play Console Help</a></li>
+          <li><a href="https://developer.android.com/distribute/best-practices/launch/launch-checklist" target="_blank" rel="noreferrer">Android Launch Checklist</a></li>
+          <li><a href="https://support.google.com/googleplay/android-developer/answer/9859673" target="_blank" rel="noreferrer">Data Safety and privacy</a></li>
+        </ul>
+      </div>
+      <div>
+        <h3>Apple</h3>
+        <ul>
+          <li><a href="https://developer.apple.com/app-store/review/" target="_blank" rel="noreferrer">App Store Review Guidelines</a></li>
+          <li><a href="https://developer.apple.com/app-store/submission/" target="_blank" rel="noreferrer">App Store submission guide</a></li>
+          <li><a href="https://developer.apple.com/app-store/app-privacy-details/" target="_blank" rel="noreferrer">App Privacy details</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <h2>Contact Support</h2>
+    <p>
+      If you need help during deployment, contact the GYMatch support team at
+      <a href="mailto:support@gymatch.com">support@gymatch.com</a>.
+    </p>
+
+    <p>
+      For deployment issues specific to Google Play or Apple App Store review, include the app bundle/package identifier,
+      build version, and a short summary of the problem.
+    </p>
+  </main>
+</body>
+</html>

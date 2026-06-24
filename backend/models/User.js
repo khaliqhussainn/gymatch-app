@@ -22,6 +22,19 @@ class User {
     return { id: result.insertId, email, role };
   }
 
+  static async createWithApple({ email, appleId, role = 'user' }) {
+    const [result] = await pool.query(
+      'INSERT INTO users (email, apple_id, role) VALUES (?, ?, ?)',
+      [email, appleId, role]
+    );
+    return { id: result.insertId, email, role };
+  }
+
+  static async findByAppleId(appleId) {
+    const [rows] = await pool.query('SELECT * FROM users WHERE apple_id = ?', [appleId]);
+    return rows[0];
+  }
+
   static async findOrCreateGoogleUser(payload) {
     const googleId = payload.sub || payload.id;
     const email = payload.email || (payload.emails && payload.emails[0] && payload.emails[0].value);
@@ -48,6 +61,40 @@ class User {
         console.error('[User.findOrCreateGoogleUser.createProfile]', profileErr);
       }
     }
+    return user;
+  }
+
+  static async findOrCreateAppleUser(payload, displayName) {
+    const appleId = payload.sub;
+    if (!appleId) {
+      throw new Error('Apple user ID is missing in token payload');
+    }
+
+    let user = await this.findByAppleId(appleId);
+    if (user) return user;
+
+    const email = payload.email;
+    if (email) {
+      user = await this.findByEmail(email);
+      if (user) {
+        await pool.query('UPDATE users SET apple_id = ? WHERE id = ?', [appleId, user.id]);
+        user.apple_id = appleId;
+        return user;
+      }
+    }
+
+    const fallbackEmail = email || `apple_${appleId}@privaterelay.gymatch.local`;
+    user = await this.createWithApple({ email: fallbackEmail, appleId });
+
+    try {
+      await pool.query(
+        'INSERT INTO profiles (user_id, name) VALUES (?, ?)',
+        [user.id, displayName || null]
+      );
+    } catch (profileErr) {
+      console.error('[User.findOrCreateAppleUser.createProfile]', profileErr);
+    }
+
     return user;
   }
 }

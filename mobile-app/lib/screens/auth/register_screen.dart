@@ -5,6 +5,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import '../../theme/app_theme.dart';
 import '../../routes/app_router.dart';
 import '../../providers/auth_provider.dart';
@@ -138,16 +139,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   Future<void> _signupWithGoogle() async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
     setState(() => _isLoading = true);
     try {
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
       if (googleUser == null) {
-        setState(() => _isLoading = false);
+        if (mounted) setState(() => _isLoading = false);
         return;
       }
 
       final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
       await authProvider.googleLogin(googleAuth.idToken ?? '');
 
       if (mounted) {
@@ -169,6 +170,69 @@ class _RegisterScreenState extends State<RegisterScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Google signup failed: $e'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _signupWithApple() async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    setState(() => _isLoading = true);
+    try {
+      final credential = await SignInWithApple.getAppleIDCredential(
+        scopes: [
+          AppleIDAuthorizationScopes.email,
+          AppleIDAuthorizationScopes.fullName,
+        ],
+      );
+
+      final identityToken = credential.identityToken;
+      if (identityToken == null) {
+        if (mounted) setState(() => _isLoading = false);
+        return;
+      }
+
+      String? name;
+      if (credential.givenName != null || credential.familyName != null) {
+        name = '${credential.givenName ?? ''} ${credential.familyName ?? ''}'.trim();
+        if (name.isEmpty) name = null;
+      }
+
+      await authProvider.appleLogin(identityToken, name: name);
+
+      if (mounted) {
+        setState(() => _isLoading = false);
+        if (authProvider.errorMessage != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(authProvider.errorMessage!),
+              backgroundColor: Colors.redAccent,
+            ),
+          );
+        } else {
+          context.go(AppRoutes.home);
+        }
+      }
+    } on SignInWithAppleAuthorizationException catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        if (e.code != AuthorizationErrorCode.canceled) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Apple signup failed: ${e.message}'),
+              backgroundColor: Colors.redAccent,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Apple signup failed: $e'),
             backgroundColor: Colors.redAccent,
           ),
         );
@@ -490,6 +554,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ),
                         ),
                       ).animate().fadeIn(delay: 600.ms, duration: 400.ms),
+
+                      if (!kIsWeb && Platform.isIOS) ...[
+                        const SizedBox(height: 12),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 54,
+                          child: SignInWithAppleButton(
+                            onPressed: _isLoading ? () {} : _signupWithApple,
+                            style: SignInWithAppleButtonStyle.white,
+                            borderRadius: BorderRadius.circular(27),
+                          ),
+                        ).animate().fadeIn(delay: 640.ms, duration: 400.ms),
+                      ],
                     ],
                   ),
                 ).animate().fadeIn(delay: 200.ms, duration: 500.ms),

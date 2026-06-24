@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../screens/splash/splash_screen.dart';
 import '../screens/onboarding/onboarding_screen.dart';
@@ -16,6 +15,7 @@ import '../screens/main_scaffold.dart';
 import '../screens/home/gym_detail_screen.dart';
 import '../screens/home/search_screen.dart';
 import '../screens/profile/saved_gyms_screen.dart';
+import '../screens/partner/partner_profile_screen.dart';
 
 class AppRoutes {
   AppRoutes._();
@@ -36,6 +36,7 @@ class AppRoutes {
   static const String gymDetail = '/gym-detail';
   static const String search = '/search';
   static const String savedGyms = '/saved-gyms';
+  static const String partnerProfile = '/partner-profile';
 }
 
 final GoRouter appRouter = GoRouter(
@@ -75,11 +76,7 @@ final GoRouter appRouter = GoRouter(
     ),
     GoRoute(
       path: AppRoutes.resetPassword,
-      builder: (context, state) {
-        // Get token from extra or query parameter
-        final resetToken = state.extra as String? ?? state.uri.queryParameters['token'];
-        return ResetPasswordScreen();
-      },
+      builder: (context, state) => const ResetPasswordScreen(),
     ),
     GoRoute(
       path: AppRoutes.notifications,
@@ -104,6 +101,17 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: AppRoutes.savedGyms,
       builder: (context, state) => const SavedGymsScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.partnerProfile,
+      builder: (context, state) {
+        final args = state.extra as Map<String, dynamic>;
+        return PartnerProfileScreen(
+          partner: args['partner'] as Map<String, dynamic>,
+          gymId: args['gymId'] as int,
+          gymName: args['gymName'] as String? ?? '',
+        );
+      },
     ),
     ShellRoute(
       builder: (context, state, child) => MainScaffold(child: child),

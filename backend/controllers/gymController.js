@@ -181,3 +181,87 @@ exports.getActivePartners = async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch active partners.' });
   }
 };
+
+const PLACES_CATEGORY_KEYWORDS = {
+  all: 'gym fitness center',
+  crossfit: 'CrossFit gym',
+  mma: 'MMA gym martial arts',
+  yoga: 'yoga studio',
+  'strength training': 'strength training gym',
+  bodybuilding: 'bodybuilding gym',
+  powerlifting: 'powerlifting gym',
+  'cardio training': 'cardio fitness center',
+  hiit: 'HIIT fitness gym',
+  'functional fitness': 'functional fitness gym',
+  boxing: 'boxing gym',
+  kickboxing: 'kickboxing gym',
+  pilates: 'pilates studio',
+  zumba: 'zumba fitness class',
+  'cycling / spinning': 'spinning cycling studio',
+  calisthenics: 'calisthenics gym',
+  'personal training': 'personal training gym',
+  'circuit training': 'circuit training gym',
+  aerobics: 'aerobics fitness center',
+  'dance fitness': 'dance fitness studio',
+  'mobility & stretching': 'mobility stretching studio',
+};
+
+function placesKeywordForCategory(category) {
+  const key = (category || 'all').toLowerCase();
+  return PLACES_CATEGORY_KEYWORDS[key] || `${key} gym`;
+}
+
+/**
+ * GET /api/gyms/places-nearby
+ * Server-side proxy for Google Places Nearby Search (avoids browser CORS on web).
+ * Query: lat, lng, radius (meters), category, openNow ('true'|'false')
+ */
+exports.getPlacesNearby = async (req, res) => {
+  try {
+    const dbConfig = require('../config/db');
+    const apiKey = dbConfig.googleMapsApiKey;
+    if (!apiKey) {
+      return res.status(503).json({
+        status: 'REQUEST_DENIED',
+        error: 'GOOGLE_MAPS_API_KEY is not configured on the server.',
+        results: [],
+      });
+    }
+
+    const { lat, lng, radius = '15000', category = 'All', openNow = 'false' } = req.query;
+    if (!lat || !lng) {
+      return res.status(400).json({ error: 'lat and lng are required.' });
+    }
+
+    const radiusMeters = Math.min(Math.max(parseInt(radius, 10) || 15000, 500), 50000);
+    const cat = (category || 'All').toString();
+    const useOpenNow = openNow === 'true' || openNow === true;
+
+    const params = new URLSearchParams({
+      location: `${lat},${lng}`,
+      radius: String(radiusMeters),
+      type: 'gym',
+      key: apiKey,
+    });
+
+    if (cat.toLowerCase() !== 'all') {
+      params.set('keyword', placesKeywordForCategory(cat));
+    }
+    if (useOpenNow) {
+      params.set('opennow', 'true');
+    }
+
+    const url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?${params}`;
+    const response = await fetch(url);
+    const data = await response.json();
+
+    res.json(data);
+  } catch (error) {
+    console.error('[GymController.getPlacesNearby]', error);
+    res.status(500).json({
+      status: 'ERROR',
+      error: 'Places search failed.',
+      results: [],
+    });
+  }
+};

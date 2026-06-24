@@ -490,7 +490,16 @@ class _GymDetailScreenState extends State<GymDetailScreen> {
                                         child: GestureDetector(
                                           onTap: isGuest
                                               ? null
-                                              : () => _confirmMatch(partners[index]),
+                                              : () {
+                                                  context.push(
+                                                    AppRoutes.partnerProfile,
+                                                    extra: {
+                                                      'partner': partners[index],
+                                                      'gymId': gym.id,
+                                                      'gymName': gym.name,
+                                                    },
+                                                  );
+                                                },
                                           child: AnimatedContainer(
                                             duration: const Duration(milliseconds: 150),
                                             width: 82,

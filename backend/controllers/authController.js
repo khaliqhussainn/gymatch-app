@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const { OAuth2Client } = require('google-auth-library');
+const appleSignin = require('apple-signin-auth');
 const User = require('../models/User');
 const dbConfig = require('../config/db');
 const pool = require('../config/connection');
@@ -115,6 +116,34 @@ exports.googleLogin = async (req, res) => {
     res.json({ token: authToken, userId: user.id, role: user.role });
   } catch (error) {
     res.status(400).json({ error: 'Google authentication failed' });
+  }
+};
+
+exports.appleLogin = async (req, res) => {
+  try {
+    const { token, name } = req.body;
+
+    if (!token) {
+      return res.status(400).json({ error: 'Apple identity token is required.' });
+    }
+
+    const payload = await appleSignin.verifyIdToken(token, {
+      audience: dbConfig.appleClientId,
+      ignoreExpiration: false,
+    });
+
+    const user = await User.findOrCreateAppleUser(payload, name);
+
+    const authToken = jwt.sign(
+      { userId: user.id, role: user.role },
+      dbConfig.jwtSecret,
+      { expiresIn: '7d' }
+    );
+
+    res.json({ token: authToken, userId: user.id, role: user.role });
+  } catch (error) {
+    console.error('[AuthController.appleLogin]', error);
+    res.status(400).json({ error: 'Apple authentication failed' });
   }
 };
 

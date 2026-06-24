@@ -11,5 +11,7 @@ module.exports = {
   port: process.env.DB_PORT || 3306,
   jwtSecret: process.env.JWT_SECRET || 'your_strong_secret_here',
   googleClientId: process.env.GOOGLE_CLIENT_ID,
-  googleClientSecret: process.env.GOOGLE_CLIENT_SECRET
+  googleClientSecret: process.env.GOOGLE_CLIENT_SECRET,
+  appleClientId: process.env.APPLE_CLIENT_ID || 'com.gymatch.app',
+  googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY || 'AIzaSyAnat7KjNftq-ctwytsR317xVrs7BQ4OzA',
 };

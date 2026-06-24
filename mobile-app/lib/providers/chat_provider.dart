@@ -187,6 +187,26 @@ class ChatProvider extends ChangeNotifier {
     }
   }
 
+  /// Check if an active thread already exists with [partnerId].
+  /// Returns the threadId if matched, null otherwise.
+  Future<int?> findThreadWithPartner(int partnerId) async {
+    try {
+      final response = await _api.dio.get('/chats/thread-with/$partnerId');
+      final matched = response.data['matched'] as bool? ?? false;
+      if (matched) {
+        return response.data['threadId'] as int?;
+      }
+      return null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Disconnect from a partner by deleting the active thread.
+  Future<bool> disconnectPartner(int threadId) async {
+    return deleteThread(threadId);
+  }
+
   /// Delete (unmatch) a chat thread.
   Future<bool> deleteThread(int threadId) async {
     try {

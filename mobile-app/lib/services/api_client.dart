@@ -33,10 +33,10 @@ class ApiClient {
   ApiClient._internal() {
     _dio = Dio(BaseOptions(
       baseUrl: defaultBaseUrl,
-      // Increase timeouts for iOS which can be slower with network negotiation
       connectTimeout: const Duration(seconds: 30),
       receiveTimeout: const Duration(seconds: 30),
-      sendTimeout: const Duration(seconds: 30),
+      // sendTimeout is not supported on Web for bodyless requests (GET).
+      sendTimeout: kIsWeb ? null : const Duration(seconds: 30),
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',

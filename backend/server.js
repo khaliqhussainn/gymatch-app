@@ -7,6 +7,7 @@ const userRoutes = require('./routes/userRoutes');
 const chatRoutes = require('./routes/chatRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 const migrationController = require('./controllers/migrationController');
+const seederController    = require('./controllers/seederController');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -61,6 +62,12 @@ app.get('/login-check', async (req, res) => {
 });
 // Usage: GET https://gymatch.syedmisbahali.com/migration?secret=YOUR_SECRET
 app.get('/migration', migrationController.runMigrations);
+
+// ── Partner seeder endpoint ────────────────────────────────────────────────
+// GET /api/seed-partners?secret=gymatch_migrate_2024_secure_key
+// Idempotent — safe to call multiple times (skips existing emails).
+// Returns JSON with created/skipped/error counts.
+app.get('/api/seed-partners', seederController.runSeeder);
 
 // ── DB diagnostic endpoint ─────────────────────────────────────────────────
 app.get('/db-check', async (req, res) => {

@@ -131,6 +131,9 @@
 		<string>_https._tcp</string>
 	</array>
 
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>GYMatch needs access to your photo library so you can set a profile picture.</string>
+
 	<!-- ═══ Google Sign-In iOS Configuration ═══ -->
 	<key>CFBundleURLTypes</key>
 	<array>

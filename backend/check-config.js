@@ -21,10 +21,10 @@ const checks = {
     optional: []
   },
   google: {
-    name: 'Google OAuth',
+    name: 'Google Services (OAuth & Maps)',
     vars: ['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET'],
-    optional: [],
-    warning: 'Required for Google Sign-In to work'
+    optional: ['GOOGLE_MAPS_API_KEY'],
+    warning: 'OAuth is required for Google Sign-In. GOOGLE_MAPS_API_KEY is optional on server (defaults to fallback key if empty).'
   },
   email: {
     name: 'Email Service',

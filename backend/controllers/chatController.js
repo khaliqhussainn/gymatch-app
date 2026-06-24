@@ -267,6 +267,38 @@ exports.sendMessage = async (req, res) => {
 };
 
 /**
+ * GET /api/chats/thread-with/:partnerId (requires auth)
+ * Returns the active thread with a specific partner, if one exists.
+ */
+exports.getThreadWithPartner = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const partnerId = parseInt(req.params.partnerId, 10);
+
+    if (isNaN(partnerId)) {
+      return res.status(400).json({ error: 'Invalid partner id.' });
+    }
+
+    const [rows] = await pool.query(
+      `SELECT id FROM chat_threads
+       WHERE ((user_1 = ? AND user_2 = ?) OR (user_1 = ? AND user_2 = ?))
+         AND expires_at > NOW()
+       LIMIT 1`,
+      [userId, partnerId, partnerId, userId]
+    );
+
+    if (rows.length > 0) {
+      return res.json({ matched: true, threadId: rows[0].id });
+    }
+
+    res.json({ matched: false, threadId: null });
+  } catch (error) {
+    console.error('[ChatController.getThreadWithPartner]', error);
+    res.status(500).json({ error: 'Failed to check match status.' });
+  }
+};
+
+/**
  * DELETE /api/chats/threads/:threadId (requires auth)
  * Unmatch — only the requesting user's side is removed.
  * Both messages and the thread row are deleted.

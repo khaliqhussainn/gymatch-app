@@ -1,60 +1,132 @@
 import 'package:geolocator/geolocator.dart';
 
+/// Result of a location access attempt.
+enum LocationPermissionStatus {
+  granted,
+  denied,
+  deniedForever,
+  serviceDisabled,
+  unknown,
+}
+
+class LocationResult {
+  final Position position;
+  final LocationPermissionStatus status;
+  final bool isFallback;
+
+  const LocationResult({
+    required this.position,
+    required this.status,
+    required this.isFallback,
+  });
+}
+
 class LocationService {
   static final LocationService _instance = LocationService._internal();
   factory LocationService() => _instance;
 
   LocationService._internal();
 
-  // Fallback default coordinates (e.g., Washington DC)
   static const double fallbackLatitude = 38.8893;
   static const double fallbackLongitude = -77.0091;
 
-  Future<Position> getCurrentPosition() async {
-    bool serviceEnabled;
-    LocationPermission permission;
+  LocationPermissionStatus _lastStatus = LocationPermissionStatus.unknown;
+  LocationPermissionStatus get lastPermissionStatus => _lastStatus;
 
-    // Test if location services are enabled.
-    serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      // Location services are not enabled don't continue
-      // accessing the position and request users of the 
-      // App to enable the location services.
-      return _getFallbackPosition('Location services are disabled.');
+  bool get hasLocationAccess =>
+      _lastStatus == LocationPermissionStatus.granted;
+
+  Future<LocationPermissionStatus> checkPermission() async {
+    if (!await Geolocator.isLocationServiceEnabled()) {
+      _lastStatus = LocationPermissionStatus.serviceDisabled;
+      return _lastStatus;
     }
 
-    permission = await Geolocator.checkPermission();
+    final permission = await Geolocator.checkPermission();
+    _lastStatus = _mapPermission(permission);
+    return _lastStatus;
+  }
+
+  /// Request system location permission. Call only after the user has seen
+  /// the app's explanatory dialog (Apple Guideline 5.1.1).
+  Future<LocationPermissionStatus> requestPermission() async {
+    if (!await Geolocator.isLocationServiceEnabled()) {
+      _lastStatus = LocationPermissionStatus.serviceDisabled;
+      return _lastStatus;
+    }
+
+    var permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
-        // Permissions are denied, next time you could try
-        // requesting permissions again (this is also where
-        // Android's shouldShowRequestPermissionRationale 
-        // returned true. According to Android guidelines
-        // your App should show an explanatory UI now.
-        return _getFallbackPosition('Location permission denied.');
-      }
     }
-    
-    if (permission == LocationPermission.deniedForever) {
-      // Permissions are denied forever, handle appropriately. 
-      return _getFallbackPosition('Location permissions are permanently denied.');
-    } 
 
-    // When we reach here, permissions are granted and we can
-    // continue accessing the position of the device.
-    try {
-      return await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
-        timeLimit: const Duration(seconds: 5),
+    _lastStatus = _mapPermission(permission);
+    return _lastStatus;
+  }
+
+  Future<LocationResult> getCurrentPosition({bool requestIfDenied = true}) async {
+    if (!await Geolocator.isLocationServiceEnabled()) {
+      _lastStatus = LocationPermissionStatus.serviceDisabled;
+      return LocationResult(
+        position: _fallbackPosition(),
+        status: _lastStatus,
+        isFallback: true,
       );
-    } catch (e) {
-      return _getFallbackPosition('Failed to get current location: $e');
+    }
+
+    var permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied && requestIfDenied) {
+      permission = await Geolocator.requestPermission();
+    }
+
+    _lastStatus = _mapPermission(permission);
+
+    if (permission == LocationPermission.denied ||
+        permission == LocationPermission.deniedForever) {
+      return LocationResult(
+        position: _fallbackPosition(),
+        status: _lastStatus,
+        isFallback: true,
+      );
+    }
+
+    try {
+      final position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+        timeLimit: const Duration(seconds: 8),
+      );
+      _lastStatus = LocationPermissionStatus.granted;
+      return LocationResult(
+        position: position,
+        status: _lastStatus,
+        isFallback: false,
+      );
+    } catch (_) {
+      return LocationResult(
+        position: _fallbackPosition(),
+        status: _lastStatus,
+        isFallback: true,
+      );
     }
   }
 
-  Position _getFallbackPosition(String reason) {
-    // Return a default position wrapped as Position object
+  Future<bool> openAppSettings() => Geolocator.openAppSettings();
+
+  LocationPermissionStatus _mapPermission(LocationPermission permission) {
+    switch (permission) {
+      case LocationPermission.always:
+      case LocationPermission.whileInUse:
+        return LocationPermissionStatus.granted;
+      case LocationPermission.denied:
+        return LocationPermissionStatus.denied;
+      case LocationPermission.deniedForever:
+        return LocationPermissionStatus.deniedForever;
+      case LocationPermission.unableToDetermine:
+        return LocationPermissionStatus.unknown;
+    }
+  }
+
+  Position _fallbackPosition() {
     return Position(
       latitude: fallbackLatitude,
       longitude: fallbackLongitude,

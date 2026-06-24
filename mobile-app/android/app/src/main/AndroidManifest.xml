@@ -13,6 +13,10 @@
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher_round">
+        <!-- Google Maps API Key -->
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="AIzaSyAnat7KjNftq-ctwytsR317xVrs7BQ4OzA"/>
         <activity
             android:name=".MainActivity"
             android:exported="true"

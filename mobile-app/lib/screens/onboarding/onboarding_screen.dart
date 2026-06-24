@@ -7,6 +7,8 @@ import '../../theme/app_theme.dart';
 import '../../routes/app_router.dart';
 import '../../widgets/app_logo.dart';
 import '../../providers/gym_provider.dart';
+import '../../widgets/location_permission_dialog.dart';
+import '../../services/location_service.dart';
 
 class _OnboardingPage {
   final String title;
@@ -65,11 +67,22 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   Future<void> _requestLocationAndProceed() async {
     if (_isRequestingLocation) return;
+
+    // Apple Guideline 5.1.1: show explanatory dialog before system permission
+    final shouldContinue = await showLocationPermissionRationale(context);
+    if (!shouldContinue) {
+      await _markSeenAndGo(AppRoutes.login);
+      return;
+    }
+
     setState(() => _isRequestingLocation = true);
 
     try {
+      final locationService = LocationService();
+      await locationService.requestPermission();
+
       final gymProvider = context.read<GymProvider>();
-      await gymProvider.refreshDeviceLocation();
+      await gymProvider.refreshDeviceLocation(requestPermission: false);
     } catch (_) {
       // Permission denied or GPS failed — proceed to login anyway
     } finally {
@@ -195,7 +208,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   Widget _buildBottomControls() {
     if (_currentPage == 2) {
-      // Screen 3 shows the full-width ALLOW LOCATION ACCESS button
+      // Screen 3: neutral "Continue" — system permission follows the rationale dialog
       return SizedBox(
         width: double.infinity,
         height: 56,
@@ -219,7 +232,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   ),
                 )
               : const Text(
-                  'ALLOW LOCATION ACCESS',
+                  'Continue',
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w900,
