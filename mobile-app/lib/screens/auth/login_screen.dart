@@ -177,7 +177,15 @@ class _LoginScreenState extends State<LoginScreen> {
 
       final identityToken = credential.identityToken;
       if (identityToken == null) {
-        if (mounted) setState(() => _isLoading = false);
+        if (mounted) {
+          setState(() => _isLoading = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Apple did not return a sign-in token. Please try again.'),
+              backgroundColor: Colors.redAccent,
+            ),
+          );
+        }
         return;
       }
 

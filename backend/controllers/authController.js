@@ -127,6 +127,10 @@ exports.appleLogin = async (req, res) => {
       return res.status(400).json({ error: 'Apple identity token is required.' });
     }
 
+    if (!dbConfig.appleClientId) {
+      return res.status(500).json({ error: 'Apple Sign-In is not configured on the server.' });
+    }
+
     const payload = await appleSignin.verifyIdToken(token, {
       audience: dbConfig.appleClientId,
       ignoreExpiration: false,
@@ -143,7 +147,14 @@ exports.appleLogin = async (req, res) => {
     res.json({ token: authToken, userId: user.id, role: user.role });
   } catch (error) {
     console.error('[AuthController.appleLogin]', error);
-    res.status(400).json({ error: 'Apple authentication failed' });
+    if (error && error.message && error.message.toLowerCase().includes('audience')) {
+      return res.status(400).json({
+        error: 'Apple Sign-In is not configured for this app bundle. Please contact support.'
+      });
+    }
+    res.status(400).json({
+      error: 'Apple authentication failed. Please try again or use another sign-in option.'
+    });
   }
 };
 

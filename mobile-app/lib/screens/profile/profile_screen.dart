@@ -1,16 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:convert';
-import 'dart:io';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import '../../theme/app_theme.dart';
 import '../../routes/app_router.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/gym_provider.dart';
-import '../../models/gym_model.dart';
 import '../../widgets/location_permission_dialog.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -219,9 +215,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
   // USER PROFILE SPECIFIC VIEWS
   Widget _buildUserAvatar(AuthProvider authProvider) {
     final profile = authProvider.userProfile;
-    final name = profile?['name'] as String?;
-    final email = authProvider.email;
+    final name = (profile?['name'] as String?)?.trim();
+    final email = _displayEmail(authProvider.email);
     final profileImage = profile?['profileImage'] as String?;
+    final isProfileLoading = profile == null;
 
     return Column(
       children: [
@@ -262,7 +259,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         const SizedBox(height: 12),
         Text(
-          name?.isNotEmpty == true ? name!.toUpperCase() : 'FITNESS ENTHUSIAST',
+          name?.isNotEmpty == true
+              ? name!.toUpperCase()
+              : isProfileLoading
+                  ? 'LOADING PROFILE'
+                  : 'GYMATCH MEMBER',
           style: const TextStyle(
             fontSize: 22,
             fontWeight: FontWeight.w900,
@@ -273,7 +274,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         const SizedBox(height: 2),
         Text(
-          email ?? 'username@gmail.com',
+          email ?? (isProfileLoading ? 'Loading account details...' : 'Email hidden by Apple'),
           style: const TextStyle(
             fontSize: 14,
             color: Colors.white38,
@@ -283,6 +284,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
       ],
     );
+  }
+
+  String? _displayEmail(String? email) {
+    final value = email?.trim();
+    if (value == null || value.isEmpty) return null;
+    if (value.endsWith('@privaterelay.gymatch.local')) return null;
+    return value;
   }
 
   Widget _defaultAvatarIcon() {

@@ -178,6 +178,16 @@ class AuthProvider extends ChangeNotifier {
       });
 
       final data = response.data;
+      if (response.statusCode != null && response.statusCode! >= 400) {
+        _errorMessage = _messageFromResponse(data) ?? 'Google authentication failed.';
+        return;
+      }
+
+      if (data == null || data['token'] == null) {
+        _errorMessage = 'Google authentication did not return a valid session.';
+        return;
+      }
+
       _token = data['token'];
       _userId = data['userId'];
       _role = data['role'] ?? 'user';
@@ -214,6 +224,17 @@ class AuthProvider extends ChangeNotifier {
       });
 
       final data = response.data;
+      if (response.statusCode != null && response.statusCode! >= 400) {
+        _errorMessage = _messageFromResponse(data) ??
+            'Apple authentication failed. Please try again.';
+        return;
+      }
+
+      if (data == null || data['token'] == null) {
+        _errorMessage = 'Apple authentication did not return a valid session.';
+        return;
+      }
+
       _token = data['token'];
       _userId = data['userId'];
       _role = data['role'] ?? 'user';
@@ -237,6 +258,16 @@ class AuthProvider extends ChangeNotifier {
       _isLoading = false;
       notifyListeners();
     }
+  }
+
+  String? _messageFromResponse(dynamic data) {
+    if (data is Map) {
+      final message = data['error'] ?? data['message'] ?? data['msg'];
+      if (message is String && message.trim().isNotEmpty) {
+        return message;
+      }
+    }
+    return null;
   }
 
   Future<Map<String, dynamic>?> forgotPassword(String email) async {

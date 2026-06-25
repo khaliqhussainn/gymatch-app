@@ -15,6 +15,8 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
+  bool _showSplashAnimation = false;
+
   @override
   void initState() {
     super.initState();
@@ -22,13 +24,24 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _navigate() async {
-    // Wait for splash animation + auto-login check to both complete
     final authProvider = context.read<AuthProvider>();
+    final prefs = await SharedPreferences.getInstance();
+    final seenOnboarding = prefs.getBool('onboarding_seen') ?? false;
+    final seenSplash = (prefs.getBool('splash_seen') ?? false) || seenOnboarding;
 
-    await Future.wait([
-      Future.delayed(const Duration(milliseconds: 2000)),
-      authProvider.tryAutoLogin(),
-    ]);
+    final autoLogin = authProvider.tryAutoLogin();
+    if (seenSplash) {
+      await autoLogin;
+    } else {
+      if (mounted) {
+        setState(() => _showSplashAnimation = true);
+      }
+      await Future.wait([
+        Future.delayed(const Duration(milliseconds: 2000)),
+        autoLogin,
+      ]);
+      await prefs.setBool('splash_seen', true);
+    }
 
     if (!mounted) return;
 
@@ -37,10 +50,6 @@ class _SplashScreenState extends State<SplashScreen> {
       context.go(AppRoutes.home);
       return;
     }
-
-    // 2. Check if onboarding was already shown
-    final prefs = await SharedPreferences.getInstance();
-    final seenOnboarding = prefs.getBool('onboarding_seen') ?? false;
 
     if (!mounted) return;
 
@@ -56,15 +65,17 @@ class _SplashScreenState extends State<SplashScreen> {
     return Scaffold(
       backgroundColor: Colors.black,
       body: Center(
-        child: const AppLogo(size: 100)
-            .animate()
-            .fadeIn(duration: 800.ms, curve: Curves.easeOut)
-            .scale(
-              begin: const Offset(0.8, 0.8),
-              end: const Offset(1.0, 1.0),
-              duration: 800.ms,
-              curve: Curves.easeOutBack,
-            ),
+        child: _showSplashAnimation
+            ? const AppLogo(size: 100)
+                .animate()
+                .fadeIn(duration: 800.ms, curve: Curves.easeOut)
+                .scale(
+                  begin: const Offset(0.8, 0.8),
+                  end: const Offset(1.0, 1.0),
+                  duration: 800.ms,
+                  curve: Curves.easeOutBack,
+                )
+            : const SizedBox.shrink(),
       ),
     );
   }

@@ -1,7 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
-import 'dart:io' show Platform, HttpClient;
+import 'dart:io' show Platform;
 
 class NetworkException implements Exception {
   final String message;
@@ -19,6 +19,10 @@ class ApiClient {
 
   late final Dio _dio;
   final _secureStorage = const FlutterSecureStorage();
+  static const _tokenKey = 'jwt_token';
+  static const _iosSecureOptions = IOSOptions(
+    accessibility: KeychainAccessibility.first_unlock,
+  );
 
   // Production backend URL
   static const String _productionUrl = 'https://gymatch.syedmisbahali.com/api';
@@ -128,14 +132,32 @@ class ApiClient {
   Dio get dio => _dio;
 
   Future<void> saveToken(String token) async {
-    await _secureStorage.write(key: 'jwt_token', value: token);
+    await _secureStorage.write(
+      key: _tokenKey,
+      value: token,
+      iOptions: _iosSecureOptions,
+    );
   }
 
   Future<String?> getToken() async {
-    return await _secureStorage.read(key: 'jwt_token');
+    final token = await _secureStorage.read(
+      key: _tokenKey,
+      iOptions: _iosSecureOptions,
+    );
+    if (token != null) return token;
+
+    final legacyToken = await _secureStorage.read(key: _tokenKey);
+    if (legacyToken != null) {
+      await saveToken(legacyToken);
+    }
+    return legacyToken;
   }
 
   Future<void> deleteToken() async {
-    await _secureStorage.delete(key: 'jwt_token');
+    await _secureStorage.delete(
+      key: _tokenKey,
+      iOptions: _iosSecureOptions,
+    );
+    await _secureStorage.delete(key: _tokenKey);
   }
 }

@@ -71,14 +71,22 @@ class User {
     }
 
     let user = await this.findByAppleId(appleId);
-    if (user) return user;
+    if (user) {
+      if (displayName && displayName.trim()) {
+        await this.updateMissingProfileName(user.id, displayName.trim());
+      }
+      return user;
+    }
 
-    const email = payload.email;
+    const email = payload.email ? payload.email.toLowerCase() : null;
     if (email) {
       user = await this.findByEmail(email);
       if (user) {
         await pool.query('UPDATE users SET apple_id = ? WHERE id = ?', [appleId, user.id]);
         user.apple_id = appleId;
+        if (displayName && displayName.trim()) {
+          await this.updateMissingProfileName(user.id, displayName.trim());
+        }
         return user;
       }
     }
@@ -96,6 +104,28 @@ class User {
     }
 
     return user;
+  }
+
+  static async updateMissingProfileName(userId, displayName) {
+    const [rows] = await pool.query(
+      'SELECT name FROM profiles WHERE user_id = ?',
+      [userId]
+    );
+
+    if (rows.length === 0) {
+      await pool.query(
+        'INSERT INTO profiles (user_id, name) VALUES (?, ?)',
+        [userId, displayName]
+      );
+      return;
+    }
+
+    if (!rows[0].name) {
+      await pool.query(
+        'UPDATE profiles SET name = ? WHERE user_id = ?',
+        [displayName, userId]
+      );
+    }
   }
 }
 
