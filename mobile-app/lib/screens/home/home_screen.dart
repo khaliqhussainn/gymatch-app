@@ -130,7 +130,13 @@ class _HomeScreenState extends State<HomeScreen> {
       final Map<int, Map<String, dynamic>> partnerMap = {};
 
       // Step 1 — collect active partners from up to 5 nearby gyms
-      final fetchFutures = gyms.take(5).map((gym) async {
+      final gymsWithPartners = gyms
+          .where((gym) => gym.activePartnersCount > 0)
+          .followedBy(gyms.where((gym) => gym.activePartnersCount <= 0))
+          .take(20)
+          .toList();
+
+      final fetchFutures = gymsWithPartners.map((gym) async {
         try {
           final resp = await api.dio.get('/gyms/${gym.id}/active-partners');
           final List<dynamic> list = resp.data['partners'] ?? [];
@@ -232,6 +238,12 @@ class _HomeScreenState extends State<HomeScreen> {
       _lastLat = newLat;
       _lastLng = newLng;
       gymProvider.fetchNearbyGyms();
+    }
+
+    if (_tabIndex == 1 &&
+        !_partnersLoading &&
+        gymProvider.state == GymLoadState.loaded) {
+      _fetchAllPartners();
     }
   }
 

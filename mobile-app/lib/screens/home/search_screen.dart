@@ -59,14 +59,19 @@ class _SearchScreenState extends State<SearchScreen> {
 
   Future<void> _searchPartners(String query) async {
     if (query.length < 2) return;
-    setState(() { _isSearchingPartners = true; _partnerError = null; });
+    setState(() {
+      _isSearchingPartners = true;
+      _partnerError = null;
+    });
     try {
       final api = ApiClient();
-      final resp = await api.dio.get('/users/search', queryParameters: {'q': query});
+      final resp =
+          await api.dio.get('/users/search', queryParameters: {'q': query});
       final List<dynamic> list = resp.data['partners'] ?? [];
       if (mounted) {
         setState(() {
-          _partnerResults = list.map((p) => Map<String, dynamic>.from(p)).toList();
+          _partnerResults =
+              list.map((p) => Map<String, dynamic>.from(p)).toList();
           _isSearchingPartners = false;
         });
       }
@@ -92,7 +97,10 @@ class _SearchScreenState extends State<SearchScreen> {
       _searchPartners(query);
     } else {
       // Location search
-      setState(() { _isSearchingLocation = true; _locationError = null; });
+      setState(() {
+        _isSearchingLocation = true;
+        _locationError = null;
+      });
       final success = await gymProvider.searchByLocation(query);
       if (mounted) {
         setState(() => _isSearchingLocation = false);
@@ -100,7 +108,8 @@ class _SearchScreenState extends State<SearchScreen> {
           await gymProvider.addToHistory('📍 $query');
           context.pop();
         } else {
-          setState(() => _locationError = 'Location "$query" not found. Try a city or address.');
+          setState(() => _locationError =
+              'Location "$query" not found. Try a city or address.');
         }
       }
     }
@@ -108,7 +117,7 @@ class _SearchScreenState extends State<SearchScreen> {
 
   void _applyHistoryItem(String item, GymProvider gymProvider) {
     final isLocation = item.startsWith('📍 ');
-    final isPartner  = item.startsWith('👤 ');
+    final isPartner = item.startsWith('👤 ');
     final clean = isLocation
         ? item.substring(3)
         : isPartner
@@ -142,28 +151,36 @@ class _SearchScreenState extends State<SearchScreen> {
     final myProfile = auth.userProfile;
     if (myProfile == null) return 72;
 
-    final myWorkout    = (myProfile['workoutTypes']  ?? '').toString().toLowerCase().trim();
-    final theirWorkout = (profile['workoutTypes']    ?? '').toString().toLowerCase().trim();
-    final myGoal       = (myProfile['fitnessGoals']  ?? '').toString().toLowerCase().trim();
-    final theirGoal    = (profile['fitnessGoals']    ?? '').toString().toLowerCase().trim();
+    final myWorkout =
+        (myProfile['workoutTypes'] ?? '').toString().toLowerCase().trim();
+    final theirWorkout =
+        (profile['workoutTypes'] ?? '').toString().toLowerCase().trim();
+    final myGoal =
+        (myProfile['fitnessGoals'] ?? '').toString().toLowerCase().trim();
+    final theirGoal =
+        (profile['fitnessGoals'] ?? '').toString().toLowerCase().trim();
 
     int score = 50;
     if (myWorkout.isNotEmpty && theirWorkout.isNotEmpty) {
       if (myWorkout == theirWorkout) {
         score += 30;
       } else {
-        final myW    = myWorkout.split(RegExp(r'[\s,/]+'));
+        final myW = myWorkout.split(RegExp(r'[\s,/]+'));
         final theirW = theirWorkout.split(RegExp(r'[\s,/]+'));
-        if (myW.any((w) => w.length > 3 && theirW.any((t) => t.contains(w) || w.contains(t)))) score += 15;
+        if (myW.any((w) =>
+            w.length > 3 && theirW.any((t) => t.contains(w) || w.contains(t))))
+          score += 15;
       }
     }
     if (myGoal.isNotEmpty && theirGoal.isNotEmpty) {
       if (myGoal == theirGoal) {
         score += 20;
       } else {
-        final myG    = myGoal.split(RegExp(r'[\s,/]+'));
+        final myG = myGoal.split(RegExp(r'[\s,/]+'));
         final theirG = theirGoal.split(RegExp(r'[\s,/]+'));
-        if (myG.any((w) => w.length > 3 && theirG.any((t) => t.contains(w) || w.contains(t)))) score += 10;
+        if (myG.any((w) =>
+            w.length > 3 && theirG.any((t) => t.contains(w) || w.contains(t))))
+          score += 10;
       }
     }
     return score.clamp(50, 99).toInt();
@@ -182,80 +199,114 @@ class _SearchScreenState extends State<SearchScreen> {
                 const SizedBox(height: 16),
 
                 // ── Search bar row ──────────────────────────────────────
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Row(
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
-                        onPressed: () => context.pop(),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF161616),
-                            borderRadius: BorderRadius.circular(30),
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final isCompact = constraints.maxWidth < 380;
+                    final horizontalPadding = isCompact ? 16.0 : 20.0;
+                    final searchHint = _mode == _SearchMode.location
+                        ? (isCompact
+                            ? 'City, area or address'
+                            : 'Enter city, area or address...')
+                        : _mode == _SearchMode.partner
+                            ? (isCompact
+                                ? 'Name or workout type'
+                                : 'Search by name or workout type...')
+                            : 'Search gyms, categories';
+
+                    return Padding(
+                      padding:
+                          EdgeInsets.symmetric(horizontal: horizontalPadding),
+                      child: Row(
+                        children: [
+                          IconButton(
+                            constraints: const BoxConstraints.tightFor(
+                                width: 44, height: 44),
+                            padding: EdgeInsets.zero,
+                            icon: const Icon(Icons.arrow_back_ios_new_rounded,
+                                color: Colors.white),
+                            onPressed: () => context.pop(),
                           ),
-                          child: Row(
-                            children: [
-                              Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 16),
-                                child: Icon(
-                                  _mode == _SearchMode.location
-                                      ? Icons.location_on_rounded
-                                      : _mode == _SearchMode.partner
-                                          ? Icons.people_alt_rounded
-                                          : Icons.search_rounded,
-                                  color: _mode == _SearchMode.location || _mode == _SearchMode.partner
-                                      ? AppColors.primary
-                                      : Colors.white38,
-                                  size: 22,
-                                ),
+                          SizedBox(width: isCompact ? 6 : 8),
+                          Expanded(
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF161616),
+                                borderRadius: BorderRadius.circular(30),
                               ),
-                              Expanded(
-                                child: TextField(
-                                  controller: _controller,
-                                  autofocus: true,
-                                  style: const TextStyle(color: Colors.white),
-                                  textInputAction: TextInputAction.search,
-                                  onChanged: (q) => _onQueryChanged(q, gymProvider),
-                                  onSubmitted: (_) => _submitSearch(gymProvider),
-                                  decoration: InputDecoration(
-                                    hintText: _mode == _SearchMode.location
-                                        ? 'Enter city, area or address...'
-                                        : _mode == _SearchMode.partner
-                                            ? 'Search by name or workout type...'
-                                            : 'Search gyms, categories',
-                                    hintStyle: const TextStyle(color: Colors.white24, fontSize: 15),
-                                    border: InputBorder.none,
-                                    enabledBorder: InputBorder.none,
-                                    focusedBorder: InputBorder.none,
-                                    contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                              child: Row(
+                                children: [
+                                  Padding(
+                                    padding: EdgeInsets.only(
+                                      left: isCompact ? 14 : 16,
+                                      right: isCompact ? 10 : 14,
+                                    ),
+                                    child: Icon(
+                                      _mode == _SearchMode.location
+                                          ? Icons.location_on_rounded
+                                          : _mode == _SearchMode.partner
+                                              ? Icons.people_alt_rounded
+                                              : Icons.search_rounded,
+                                      color: _mode == _SearchMode.location ||
+                                              _mode == _SearchMode.partner
+                                          ? AppColors.primary
+                                          : Colors.white38,
+                                      size: 22,
+                                    ),
                                   ),
-                                ),
+                                  Expanded(
+                                    child: TextField(
+                                      controller: _controller,
+                                      autofocus: true,
+                                      style:
+                                          const TextStyle(color: Colors.white),
+                                      textInputAction: TextInputAction.search,
+                                      onChanged: (q) =>
+                                          _onQueryChanged(q, gymProvider),
+                                      onSubmitted: (_) =>
+                                          _submitSearch(gymProvider),
+                                      decoration: InputDecoration(
+                                        hintText: searchHint,
+                                        hintStyle: const TextStyle(
+                                            color: Colors.white24,
+                                            fontSize: 15),
+                                        border: InputBorder.none,
+                                        enabledBorder: InputBorder.none,
+                                        focusedBorder: InputBorder.none,
+                                        isDense: true,
+                                        contentPadding:
+                                            const EdgeInsets.symmetric(
+                                                vertical: 16),
+                                      ),
+                                    ),
+                                  ),
+                                  if (_hasQuery)
+                                    IconButton(
+                                      constraints:
+                                          const BoxConstraints.tightFor(
+                                              width: 40, height: 40),
+                                      padding: EdgeInsets.zero,
+                                      icon: const Icon(Icons.close_rounded,
+                                          color: Colors.white38, size: 20),
+                                      onPressed: () {
+                                        _controller.clear();
+                                        setState(() {
+                                          _hasQuery = false;
+                                          _locationError = null;
+                                          _partnerError = null;
+                                          _partnerResults = [];
+                                        });
+                                        gymProvider.searchGyms('');
+                                      },
+                                    ),
+                                  const SizedBox(width: 4),
+                                ],
                               ),
-                              if (_hasQuery)
-                                IconButton(
-                                  icon: const Icon(Icons.close_rounded, color: Colors.white38, size: 20),
-                                  onPressed: () {
-                                    _controller.clear();
-                                    setState(() {
-                                      _hasQuery = false;
-                                      _locationError = null;
-                                      _partnerError = null;
-                                      _partnerResults = [];
-                                    });
-                                    gymProvider.searchGyms('');
-                                  },
-                                ),
-                              const SizedBox(width: 4),
-                            ],
+                            ),
                           ),
-                        ),
+                        ],
                       ),
-                    ],
-                  ),
+                    );
+                  },
                 ),
 
                 const SizedBox(height: 12),
@@ -263,14 +314,20 @@ class _SearchScreenState extends State<SearchScreen> {
                 // ── Mode chips ─────────────────────────────────────────
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Row(
-                    children: [
-                      _buildModeChip('Gyms',       Icons.fitness_center_rounded, _SearchMode.gym),
-                      const SizedBox(width: 10),
-                      _buildModeChip('Partners',   Icons.people_alt_rounded,     _SearchMode.partner),
-                      const SizedBox(width: 10),
-                      _buildModeChip('By Location', Icons.location_on_rounded,   _SearchMode.location),
-                    ],
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Wrap(
+                      spacing: 10,
+                      runSpacing: 10,
+                      children: [
+                        _buildModeChip('Gyms', Icons.fitness_center_rounded,
+                            _SearchMode.gym),
+                        _buildModeChip('Partners', Icons.people_alt_rounded,
+                            _SearchMode.partner),
+                        _buildModeChip('By Location', Icons.location_on_rounded,
+                            _SearchMode.location),
+                      ],
+                    ),
                   ),
                 ),
 
@@ -279,13 +336,19 @@ class _SearchScreenState extends State<SearchScreen> {
                 // ── Errors ─────────────────────────────────────────────
                 if (_locationError != null)
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
-                    child: Text(_locationError!, style: const TextStyle(color: Colors.redAccent, fontSize: 13)),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+                    child: Text(_locationError!,
+                        style: const TextStyle(
+                            color: Colors.redAccent, fontSize: 13)),
                   ),
                 if (_partnerError != null)
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
-                    child: Text(_partnerError!, style: const TextStyle(color: Colors.redAccent, fontSize: 13)),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+                    child: Text(_partnerError!,
+                        style: const TextStyle(
+                            color: Colors.redAccent, fontSize: 13)),
                   ),
 
                 const SizedBox(height: 4),
@@ -297,9 +360,11 @@ class _SearchScreenState extends State<SearchScreen> {
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              CircularProgressIndicator(color: Color(0xFFCBF135), strokeWidth: 2),
+                              CircularProgressIndicator(
+                                  color: Color(0xFFCBF135), strokeWidth: 2),
                               SizedBox(height: 16),
-                              Text('Finding location...', style: TextStyle(color: Colors.white60)),
+                              Text('Finding location...',
+                                  style: TextStyle(color: Colors.white60)),
                             ],
                           ),
                         )
@@ -335,6 +400,8 @@ class _SearchScreenState extends State<SearchScreen> {
             _searchPartners(query);
           } else if (mode == _SearchMode.gym) {
             Provider.of<GymProvider>(context, listen: false).searchGyms(query);
+          } else if (mode == _SearchMode.location) {
+            _submitSearch(Provider.of<GymProvider>(context, listen: false));
           }
         }
       },
@@ -344,12 +411,14 @@ class _SearchScreenState extends State<SearchScreen> {
         decoration: BoxDecoration(
           color: isSelected ? AppColors.primary : const Color(0xFF1A1A1A),
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: isSelected ? AppColors.primary : Colors.white12),
+          border: Border.all(
+              color: isSelected ? AppColors.primary : Colors.white12),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 15, color: isSelected ? Colors.black : Colors.white54),
+            Icon(icon,
+                size: 15, color: isSelected ? Colors.black : Colors.white54),
             const SizedBox(width: 6),
             Text(
               label,
@@ -367,7 +436,9 @@ class _SearchScreenState extends State<SearchScreen> {
 
   // ── Partner results ────────────────────────────────────────────────────
   Widget _buildPartnerResults() {
-    if (!_hasQuery) return _buildDefaultView(Provider.of<GymProvider>(context, listen: false));
+    if (!_hasQuery)
+      return _buildDefaultView(
+          Provider.of<GymProvider>(context, listen: false));
 
     if (_isSearchingPartners) {
       return const Center(
@@ -376,7 +447,8 @@ class _SearchScreenState extends State<SearchScreen> {
           children: [
             CircularProgressIndicator(color: Color(0xFFCBF135), strokeWidth: 2),
             SizedBox(height: 16),
-            Text('Searching partners...', style: TextStyle(color: Colors.white60)),
+            Text('Searching partners...',
+                style: TextStyle(color: Colors.white60)),
           ],
         ),
       );
@@ -387,7 +459,8 @@ class _SearchScreenState extends State<SearchScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.people_alt_rounded, color: Colors.white24, size: 60),
+            const Icon(Icons.people_alt_rounded,
+                color: Colors.white24, size: 60),
             const SizedBox(height: 16),
             Text(
               'No partners found for "${_controller.text}"',
@@ -421,12 +494,13 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   Widget _buildPartnerTile(Map<String, dynamic> partner, int matchScore) {
-    final name          = (partner['name'] as String?)?.isNotEmpty == true
-        ? partner['name'] as String : 'Athlete';
-    final workoutTypes  = partner['workoutTypes'] as String? ?? '';
+    final name = (partner['name'] as String?)?.isNotEmpty == true
+        ? partner['name'] as String
+        : 'Athlete';
+    final workoutTypes = partner['workoutTypes'] as String? ?? '';
     final profileImgB64 = partner['profileImage'] as String?;
-    final gymId         = (partner['gymId'] as num?)?.toInt() ?? 0;
-    final gymName       = partner['gymName'] as String? ?? '';
+    final gymId = (partner['gymId'] as num?)?.toInt() ?? 0;
+    final gymName = partner['gymName'] as String? ?? '';
 
     final tags = workoutTypes
         .split(RegExp(r'[,/]'))
@@ -478,7 +552,10 @@ class _SearchScreenState extends State<SearchScreen> {
                 children: [
                   Text(
                     name,
-                    style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w800),
+                    style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -489,23 +566,30 @@ class _SearchScreenState extends State<SearchScreen> {
                     children: [
                       // Match badge
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 3),
                         decoration: BoxDecoration(
                           color: const Color(0xFF2A4A1E),
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
                           '$matchScore% Match',
-                          style: TextStyle(color: AppColors.primary, fontSize: 11, fontWeight: FontWeight.w700),
+                          style: TextStyle(
+                              color: AppColors.primary,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700),
                         ),
                       ),
                       ...tags.map((tag) => Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 3),
                             decoration: BoxDecoration(
                               color: const Color(0xFF222222),
                               borderRadius: BorderRadius.circular(20),
                             ),
-                            child: Text(tag, style: const TextStyle(color: Colors.white70, fontSize: 11)),
+                            child: Text(tag,
+                                style: const TextStyle(
+                                    color: Colors.white70, fontSize: 11)),
                           )),
                     ],
                   ),
@@ -514,7 +598,8 @@ class _SearchScreenState extends State<SearchScreen> {
             ),
 
             // Arrow
-            const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white24, size: 16),
+            const Icon(Icons.arrow_forward_ios_rounded,
+                color: Colors.white24, size: 16),
           ],
         ),
       ),
@@ -522,14 +607,17 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   Widget _partnerAvatarFallback() => Container(
-    color: const Color(0xFF1A1A1A),
-    child: const Icon(Icons.person_rounded, color: Colors.white38, size: 30),
-  );
+        color: const Color(0xFF1A1A1A),
+        child:
+            const Icon(Icons.person_rounded, color: Colors.white38, size: 30),
+      );
 
   // ── Gym results ────────────────────────────────────────────────────────
   Widget _buildGymResults(GymProvider gymProvider) {
     if (gymProvider.isLoading) {
-      return const Center(child: CircularProgressIndicator(color: Color(0xFFCBF135), strokeWidth: 2));
+      return const Center(
+          child: CircularProgressIndicator(
+              color: Color(0xFFCBF135), strokeWidth: 2));
     }
 
     if (gymProvider.searchResults.isEmpty) {
@@ -537,7 +625,8 @@ class _SearchScreenState extends State<SearchScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.search_off_rounded, color: Colors.white24, size: 60),
+            const Icon(Icons.search_off_rounded,
+                color: Colors.white24, size: 60),
             const SizedBox(height: 16),
             Text(
               'No gyms found for "${_controller.text}"',
@@ -575,10 +664,14 @@ class _SearchScreenState extends State<SearchScreen> {
         child: Row(
           children: [
             ClipRRect(
-              borderRadius: const BorderRadius.horizontal(left: Radius.circular(15)),
+              borderRadius:
+                  const BorderRadius.horizontal(left: Radius.circular(15)),
               child: gym.coverImage != null
                   ? Image.network(
-                      gym.coverImage!, width: 80, height: 80, fit: BoxFit.cover,
+                      gym.coverImage!,
+                      width: 80,
+                      height: 80,
+                      fit: BoxFit.cover,
                       errorBuilder: (_, __, ___) => _thumbFallback(),
                     )
                   : _thumbFallback(),
@@ -590,27 +683,42 @@ class _SearchScreenState extends State<SearchScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(gym.name, style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w800)),
+                    Text(gym.name,
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w800)),
                     const SizedBox(height: 2),
-                    Text(gym.locationName, style: const TextStyle(color: Colors.white38, fontSize: 12)),
+                    Text(gym.locationName,
+                        style: const TextStyle(
+                            color: Colors.white38, fontSize: 12)),
                     const SizedBox(height: 6),
                     Row(
                       children: [
-                        const Icon(Icons.star_rounded, color: Colors.amber, size: 14),
+                        const Icon(Icons.star_rounded,
+                            color: Colors.amber, size: 14),
                         const SizedBox(width: 3),
-                        Text(gym.rating.toStringAsFixed(1), style: const TextStyle(color: Colors.white70, fontSize: 12)),
+                        Text(gym.rating.toStringAsFixed(1),
+                            style: const TextStyle(
+                                color: Colors.white70, fontSize: 12)),
                         const SizedBox(width: 12),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 2),
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(8),
-                            color: gym.isOpen ? AppColors.primary.withOpacity(0.15) : Colors.white10,
+                            color: gym.isOpen
+                                ? AppColors.primary.withOpacity(0.15)
+                                : Colors.white10,
                           ),
                           child: Text(
                             gym.isOpen ? 'Open' : 'Closed',
                             style: TextStyle(
-                              fontSize: 10, fontWeight: FontWeight.w700,
-                              color: gym.isOpen ? AppColors.primary : Colors.white38,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              color: gym.isOpen
+                                  ? AppColors.primary
+                                  : Colors.white38,
                             ),
                           ),
                         ),
@@ -623,7 +731,10 @@ class _SearchScreenState extends State<SearchScreen> {
             Padding(
               padding: const EdgeInsets.only(right: 16),
               child: Text(gym.distanceLabel,
-                  style: TextStyle(color: AppColors.primary, fontSize: 13, fontWeight: FontWeight.w900)),
+                  style: TextStyle(
+                      color: AppColors.primary,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w900)),
             ),
           ],
         ),
@@ -634,8 +745,28 @@ class _SearchScreenState extends State<SearchScreen> {
   // ── Default view (history + suggestions) ──────────────────────────────
   Widget _buildDefaultView(GymProvider gymProvider) {
     final history = gymProvider.searchHistory;
-    final gymSuggestions = ['CrossFit', 'MMA', 'Yoga', 'Bodybuilding', 'HIIT', 'Boxing', 'Pilates', 'Zumba', 'Powerlifting', 'Calisthenics'];
-    final partnerSuggestions = ['CrossFit', 'Yoga', 'HIIT', 'Boxing', 'Pilates', 'Strength', 'Running', 'Cardio'];
+    final gymSuggestions = [
+      'CrossFit',
+      'MMA',
+      'Yoga',
+      'Bodybuilding',
+      'HIIT',
+      'Boxing',
+      'Pilates',
+      'Zumba',
+      'Powerlifting',
+      'Calisthenics'
+    ];
+    final partnerSuggestions = [
+      'CrossFit',
+      'Yoga',
+      'HIIT',
+      'Boxing',
+      'Pilates',
+      'Strength',
+      'Running',
+      'Cardio'
+    ];
 
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -650,93 +781,124 @@ class _SearchScreenState extends State<SearchScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text('RECENT SEARCHES',
-                    style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w900, letterSpacing: 1.2)),
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 1.2)),
                 TextButton(
                   onPressed: () => gymProvider.clearHistory(),
-                  child: Text('Clear all', style: TextStyle(color: AppColors.primary, fontSize: 13)),
+                  child: Text('Clear all',
+                      style: TextStyle(color: AppColors.primary, fontSize: 13)),
                 ),
               ],
             ),
             const SizedBox(height: 10),
-            ...history.map((item) => Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: GestureDetector(
-                onTap: () => _applyHistoryItem(item, gymProvider),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF141414),
-                    borderRadius: BorderRadius.circular(30),
-                    border: Border.all(color: Colors.white10),
-                  ),
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                  child: Row(
-                    children: [
-                      Icon(
-                        item.startsWith('📍')
-                            ? Icons.location_on_rounded
-                            : item.startsWith('👤')
-                                ? Icons.people_alt_rounded
-                                : Icons.access_time_rounded,
-                        color: item.startsWith('📍') || item.startsWith('👤')
-                            ? AppColors.primary
-                            : Colors.white38,
-                        size: 18,
+            ...history
+                .map((item) => Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: GestureDetector(
+                        onTap: () => _applyHistoryItem(item, gymProvider),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF141414),
+                            borderRadius: BorderRadius.circular(30),
+                            border: Border.all(color: Colors.white10),
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 20, vertical: 14),
+                          child: Row(
+                            children: [
+                              Icon(
+                                item.startsWith('📍')
+                                    ? Icons.location_on_rounded
+                                    : item.startsWith('👤')
+                                        ? Icons.people_alt_rounded
+                                        : Icons.access_time_rounded,
+                                color: item.startsWith('📍') ||
+                                        item.startsWith('👤')
+                                    ? AppColors.primary
+                                    : Colors.white38,
+                                size: 18,
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(item,
+                                    style: const TextStyle(
+                                        color: Colors.white70,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w500)),
+                              ),
+                              GestureDetector(
+                                onTap: () =>
+                                    gymProvider.removeFromHistory(item),
+                                child: const Icon(Icons.close_rounded,
+                                    color: Colors.white24, size: 18),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(item, style: const TextStyle(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.w500)),
-                      ),
-                      GestureDetector(
-                        onTap: () => gymProvider.removeFromHistory(item),
-                        child: const Icon(Icons.close_rounded, color: Colors.white24, size: 18),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            )).toList(),
+                    ))
+                .toList(),
             const SizedBox(height: 24),
           ],
 
           // ── Suggestions ────────────────────────────────────────────
           Text(
             _mode == _SearchMode.partner ? 'PARTNER SUGGESTIONS' : 'SUGGESTED',
-            style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w900, letterSpacing: 1.2),
+            style: const TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 1.2),
           ),
           const SizedBox(height: 12),
           Wrap(
-            spacing: 10, runSpacing: 10,
-            children: (_mode == _SearchMode.partner ? partnerSuggestions : gymSuggestions)
+            spacing: 10,
+            runSpacing: 10,
+            children: (_mode == _SearchMode.partner
+                    ? partnerSuggestions
+                    : gymSuggestions)
                 .map((item) => GestureDetector(
-                  onTap: () {
-                    _controller.text = item;
-                    setState(() { _hasQuery = true; });
-                    if (_mode == _SearchMode.partner) {
-                      _searchPartners(item);
-                    } else {
-                      setState(() => _mode = _SearchMode.gym);
-                      gymProvider.searchGyms(item);
-                    }
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF141414),
-                      borderRadius: BorderRadius.circular(30),
-                      border: Border.all(color: Colors.white10),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (_mode == _SearchMode.partner) ...[
-                          Icon(Icons.people_alt_rounded, size: 14, color: AppColors.primary),
-                          const SizedBox(width: 6),
-                        ],
-                        Text(item, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)),
-                      ],
-                    ),
-                  ),
-                )).toList(),
+                      onTap: () {
+                        _controller.text = item;
+                        setState(() {
+                          _hasQuery = true;
+                        });
+                        if (_mode == _SearchMode.partner) {
+                          _searchPartners(item);
+                        } else {
+                          setState(() => _mode = _SearchMode.gym);
+                          gymProvider.searchGyms(item);
+                        }
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 18, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF141414),
+                          borderRadius: BorderRadius.circular(30),
+                          border: Border.all(color: Colors.white10),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (_mode == _SearchMode.partner) ...[
+                              Icon(Icons.people_alt_rounded,
+                                  size: 14, color: AppColors.primary),
+                              const SizedBox(width: 6),
+                            ],
+                            Text(item,
+                                style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.bold)),
+                          ],
+                        ),
+                      ),
+                    ))
+                .toList(),
           ),
           const SizedBox(height: 40),
         ],
@@ -745,7 +907,10 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   Widget _thumbFallback() => Container(
-    width: 80, height: 80, color: const Color(0xFF1A1A1A),
-    child: const Icon(Icons.fitness_center_rounded, color: Colors.white24, size: 28),
-  );
+        width: 80,
+        height: 80,
+        color: const Color(0xFF1A1A1A),
+        child: const Icon(Icons.fitness_center_rounded,
+            color: Colors.white24, size: 28),
+      );
 }

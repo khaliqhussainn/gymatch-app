@@ -450,7 +450,7 @@ exports.runMigrations = async (req, res) => {
     }
 
     // ── Migration 7: Add about_me column to profiles ─────────────────────
-    log('\n[7/7] Checking about_me column on profiles table...');
+    log('\n[7/8] Checking about_me column on profiles table...');
     try {
       await pool.query(`ALTER TABLE profiles ADD COLUMN about_me TEXT NULL AFTER availability`);
       log('  ✓ about_me column added to profiles.');
@@ -459,6 +459,19 @@ exports.runMigrations = async (req, res) => {
         log('  ✓ about_me column already exists, skipped.');
       } else {
         log(`  ⚠️ Could not add about_me column: ${e.message}`);
+      }
+    }
+
+    // ── Migration 8: Add google_place_id column to gyms ──────────────────
+    log('\n[8/8] Checking google_place_id column on gyms table...');
+    try {
+      await pool.query(`ALTER TABLE gyms ADD COLUMN google_place_id VARCHAR(255) UNIQUE NULL AFTER is_featured`);
+      log('  ✓ google_place_id column added to gyms.');
+    } catch (e) {
+      if (e.errno === 1060 || (e.message && e.message.includes('Duplicate column'))) {
+        log('  ✓ google_place_id column already exists, skipped.');
+      } else {
+        log(`  ⚠️ Could not add google_place_id column: ${e.message}`);
       }
     }
 

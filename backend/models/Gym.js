@@ -10,7 +10,7 @@ class Gym {
       SELECT
         g.id, g.name, g.sub_name, g.location_name, g.near_location,
         g.latitude, g.longitude, g.rating, g.is_open,
-        g.open_hours, g.contact_phone, g.category,
+        g.open_hours, g.contact_phone, g.category, g.google_place_id,
         COALESCE(g.is_featured, 0) AS is_featured,
         (6371 * acos(
           GREATEST(-1, LEAST(1,
@@ -60,7 +60,7 @@ class Gym {
       `SELECT g.id, g.name, g.sub_name, g.location_name, g.near_location,
         g.latitude, g.longitude, g.rating, g.is_open,
         g.open_hours, g.contact_phone, g.category,
-        COALESCE(g.is_featured, 0) AS is_featured,
+        g.google_place_id, COALESCE(g.is_featured, 0) AS is_featured,
         g.created_at,
         (SELECT COUNT(*) FROM active_partners ap WHERE ap.gym_id = g.id) AS active_partners_count
        FROM gyms g WHERE g.id = ?`,
@@ -120,6 +120,7 @@ class Gym {
   static async getSaved(userId) {
     const [rows] = await pool.query(
       `SELECT g.id, g.name, g.sub_name, g.location_name, g.rating, g.category,
+        g.google_place_id,
         COALESCE(g.is_featured, 0) AS is_featured,
         (SELECT i.image_url FROM gym_images i WHERE i.gym_id = g.id ORDER BY i.sort_order LIMIT 1) AS cover_image
        FROM saved_gyms s

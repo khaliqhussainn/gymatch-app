@@ -55,6 +55,46 @@ class GymModel {
     return '${distanceKm.toStringAsFixed(1)} KM';
   }
 
+  /// True when a real phone number is available (not a placeholder).
+  bool get hasContactPhone {
+    if (contactPhone.isEmpty) return false;
+    if (contactPhone.contains('555-0199')) return false;
+    return contactPhone.replaceAll(RegExp(r'[^\d]'), '').length >= 7;
+  }
+
+  bool get hasRating => rating > 0;
+
+  bool get hasOpenHours => openHours.isNotEmpty;
+
+  static bool isPlaceholderImage(String url) {
+    return url.contains('unsplash.com') || url.contains('placeholder');
+  }
+
+  /// Real image URLs only — excludes stock/placeholder images.
+  List<String> get displayImages {
+    final seen = <String>{};
+    final urls = <String>[];
+    for (final url in [...images, if (coverImage != null) coverImage!]) {
+      final key = _imageIdentity(url);
+      if (url.isNotEmpty &&
+          !isPlaceholderImage(url) &&
+          seen.add(key)) {
+        urls.add(url);
+        if (urls.length == 4) break;
+      }
+    }
+    return urls;
+  }
+
+  static String _imageIdentity(String url) {
+    try {
+      final uri = Uri.parse(url);
+      return uri.queryParameters['photo_reference'] ?? url;
+    } catch (_) {
+      return url;
+    }
+  }
+
   factory GymModel.fromJson(Map<String, dynamic> json) {
     return GymModel(
       id: json['id'] as int,

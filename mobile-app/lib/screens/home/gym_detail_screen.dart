@@ -10,7 +10,6 @@ import '../../routes/app_router.dart';
 import '../../providers/gym_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../models/gym_model.dart';
-import '../../providers/chat_provider.dart';
 import '../../widgets/featured_badge.dart';
 
 class GymDetailScreen extends StatefulWidget {
@@ -22,7 +21,6 @@ class GymDetailScreen extends StatefulWidget {
 }
 
 class _GymDetailScreenState extends State<GymDetailScreen> {
-  int _currentImageIndex = 0;
   bool _myActiveStatus = false;
   bool _isTogglingPartner = false;
   bool _isLoading = true;
@@ -37,7 +35,10 @@ class _GymDetailScreenState extends State<GymDetailScreen> {
   }
 
   Future<void> _loadGym() async {
-    setState(() { _isLoading = true; _error = null; });
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
 
     if (widget.gymId != null) {
       final gymProvider = Provider.of<GymProvider>(context, listen: false);
@@ -52,7 +53,10 @@ class _GymDetailScreenState extends State<GymDetailScreen> {
         });
       }
     } else {
-      setState(() { _isLoading = false; _error = 'No gym selected.'; });
+      setState(() {
+        _isLoading = false;
+        _error = 'No gym selected.';
+      });
     }
   }
 
@@ -84,9 +88,7 @@ class _GymDetailScreenState extends State<GymDetailScreen> {
     final name = Uri.encodeComponent(_gym!.name);
 
     // Try Google Maps app first, then fall back to browser
-    final googleMapsApp = Uri.parse(
-      'google.navigation:q=$lat,$lng&mode=d',
-    );
+    final googleMapsApp = Uri.parse('google.navigation:q=$lat,$lng&mode=d');
     final googleMapsBrowser = Uri.parse(
       'https://www.google.com/maps/dir/?api=1&destination=$lat,$lng&destination_place_id=$name&travelmode=driving',
     );
@@ -103,9 +105,11 @@ class _GymDetailScreenState extends State<GymDetailScreen> {
 
   /// Call the gym's phone number
   Future<void> _callGym() async {
-    if (_gym == null || _gym!.contactPhone.isEmpty) {
+    if (_gym == null || !_gym!.hasContactPhone) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No phone number available for this gym.')),
+        const SnackBar(
+          content: Text('No phone number available for this gym.'),
+        ),
       );
       return;
     }
@@ -119,7 +123,9 @@ class _GymDetailScreenState extends State<GymDetailScreen> {
     } else {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Cannot make a call to ${_gym!.contactPhone}')),
+          SnackBar(
+            content: Text('Cannot make a call to ${_gym!.contactPhone}'),
+          ),
         );
       }
     }
@@ -135,7 +141,7 @@ class _GymDetailScreenState extends State<GymDetailScreen> {
       '⭐ ${gym.rating.toStringAsFixed(1)} • ${gym.distanceLabel} away',
       '📍 ${gym.locationName}',
       '🕐 ${gym.openHours}',
-      if (gym.contactPhone.isNotEmpty) '📞 ${gym.contactPhone}',
+      if (gym.hasContactPhone) '📞 ${gym.contactPhone}',
       '',
       'Find your perfect workout partner on GYMatch!',
     ];
@@ -164,82 +170,90 @@ class _GymDetailScreenState extends State<GymDetailScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                width: 64, height: 64,
-                decoration: BoxDecoration(shape: BoxShape.circle, color: AppColors.primary),
-                child: const Center(child: Icon(Icons.person_rounded, color: Colors.black, size: 38)),
+                width: 64,
+                height: 64,
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppColors.primary,
+                ),
+                child: const Center(
+                  child: Icon(
+                    Icons.person_rounded,
+                    color: Colors.black,
+                    size: 38,
+                  ),
+                ),
               ),
               const SizedBox(height: 20),
-              const Text('SIGN IN REQUIRED', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: 1), textAlign: TextAlign.center),
+              const Text(
+                'SIGN IN REQUIRED',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w900,
+                  color: Colors.white,
+                  letterSpacing: 1,
+                ),
+                textAlign: TextAlign.center,
+              ),
               const SizedBox(height: 12),
-              const Text('Sign up to save gyms, contact them and unlock the full GYMatch experience.', style: TextStyle(fontSize: 14, color: Colors.white70, height: 1.5), textAlign: TextAlign.center),
+              const Text(
+                'Sign up to save gyms, contact them and unlock the full GYMatch experience.',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.white70,
+                  height: 1.5,
+                ),
+                textAlign: TextAlign.center,
+              ),
               const SizedBox(height: 24),
               SizedBox(
-                width: double.infinity, height: 52,
+                width: double.infinity,
+                height: 52,
                 child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.black, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26))),
-                  onPressed: () { Navigator.pop(context); context.go(AppRoutes.register); },
-                  child: const Text('Create Free Account', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.black,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(26),
+                    ),
+                  ),
+                  onPressed: () {
+                    Navigator.pop(context);
+                    context.go(AppRoutes.register);
+                  },
+                  child: const Text(
+                    'Create Free Account',
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800),
+                  ),
                 ),
               ),
               const SizedBox(height: 16),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Text('Already have an account? ', style: TextStyle(color: Colors.white38, fontSize: 13)),
+                  const Text(
+                    'Already have an account? ',
+                    style: TextStyle(color: Colors.white38, fontSize: 13),
+                  ),
                   GestureDetector(
-                    onTap: () { Navigator.pop(context); context.go(AppRoutes.login); },
-                    child: Text('Log In', style: TextStyle(color: AppColors.primary, fontSize: 13, fontWeight: FontWeight.bold)),
+                    onTap: () {
+                      Navigator.pop(context);
+                      context.go(AppRoutes.login);
+                    },
+                    child: const Text(
+                      'Log In',
+                      style: TextStyle(
+                        color: AppColors.primary,
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
                 ],
               ),
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  void _confirmMatch(Map<String, dynamic> partner) {
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    if (authProvider.isGuest) {
-      _showUnlockModal();
-      return;
-    }
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF151515),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: const BorderSide(color: Colors.white12)),
-        title: Text('MATCH WITH ${partner['name'].toUpperCase()}?', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900)),
-        content: Text('Would you like to match with ${partner['name']} for ${partner['workoutType']} training at ${_gym?.name ?? 'this gym'}?', style: const TextStyle(color: Colors.white70)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel', style: TextStyle(color: Colors.white38)),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.black),
-            onPressed: () async {
-              Navigator.pop(context);
-              final chatProvider = Provider.of<ChatProvider>(context, listen: false);
-              final threadId = await chatProvider.invitePartner(
-                _gym!.id,
-                partner['userId'],
-                partner['workoutType'],
-              );
-              if (mounted && threadId != null) {
-                context.go('/main/map');
-              } else {
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Failed to initiate match. Please try again.')),
-                  );
-                }
-              }
-            },
-            child: const Text('Match Now', style: TextStyle(fontWeight: FontWeight.bold)),
-          ),
-        ],
       ),
     );
   }
@@ -252,7 +266,10 @@ class _GymDetailScreenState extends State<GymDetailScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
+          icon: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: Colors.white,
+          ),
           onPressed: () => context.pop(),
         ),
         actions: [
@@ -260,9 +277,18 @@ class _GymDetailScreenState extends State<GymDetailScreen> {
             IconButton(
               onPressed: _isSaving ? null : _toggleSave,
               icon: _isSaving
-                  ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                  ? const SizedBox(
+                      width: 22,
+                      height: 22,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
                   : Icon(
-                      _gym!.isSaved ? Icons.bookmark_rounded : Icons.bookmark_border_rounded,
+                      _gym!.isSaved
+                          ? Icons.bookmark_rounded
+                          : Icons.bookmark_border_rounded,
                       color: _gym!.isSaved ? AppColors.primary : Colors.white,
                       size: 26,
                     ),
@@ -272,7 +298,9 @@ class _GymDetailScreenState extends State<GymDetailScreen> {
       ),
       extendBodyBehindAppBar: true,
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: Color(0xFFCBF135)))
+          ? const Center(
+              child: CircularProgressIndicator(color: Color(0xFFCBF135)),
+            )
           : _error != null
               ? _buildError()
               : _buildContent(),
@@ -284,91 +312,112 @@ class _GymDetailScreenState extends State<GymDetailScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.error_outline_rounded, color: Colors.white24, size: 60),
+          const Icon(
+            Icons.error_outline_rounded,
+            color: Colors.white24,
+            size: 60,
+          ),
           const SizedBox(height: 16),
-          Text(_error!, style: const TextStyle(color: Colors.white60, fontSize: 16), textAlign: TextAlign.center),
+          Text(
+            _error!,
+            style: const TextStyle(color: Colors.white60, fontSize: 16),
+            textAlign: TextAlign.center,
+          ),
           const SizedBox(height: 24),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.black, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20))),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.black,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+            ),
             onPressed: _loadGym,
-            child: const Text('Retry', style: TextStyle(fontWeight: FontWeight.w700)),
+            child: const Text(
+              'Retry',
+              style: TextStyle(fontWeight: FontWeight.w700),
+            ),
           ),
         ],
       ),
     );
   }
 
+  Widget _buildGymImage(String imageUrl) {
+    return Image.network(
+      imageUrl,
+      headers: const {
+        'Accept': 'image/jpeg,image/png,image/webp,*/*;q=0.8',
+      },
+      fit: BoxFit.cover,
+      width: double.infinity,
+      loadingBuilder: (context, child, loadingProgress) {
+        if (loadingProgress == null) return child;
+        return _buildImageFallback(isLoading: true);
+      },
+      errorBuilder: (context, error, stackTrace) {
+        debugPrint('[GymDetail] image failed: $imageUrl | $error');
+        return _buildImageFallback();
+      },
+    );
+  }
+
   Widget _buildContent() {
     final gym = _gym!;
-    final images = gym.images.isNotEmpty ? gym.images : [gym.coverImage ?? ''];
+    final images = gym.displayImages;
+    final image = images.isNotEmpty ? images.first : null;
+    final hoursLines = _formatHoursLines(gym.openHours);
 
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Image Carousel
-          Stack(
-            alignment: Alignment.bottomCenter,
-            children: [
-              SizedBox(
-                height: 320,
-                child: PageView.builder(
-                  itemCount: images.length,
-                  onPageChanged: (i) => setState(() => _currentImageIndex = i),
-                  itemBuilder: (context, index) {
-                    final url = images[index];
-                    return url.isNotEmpty
-                        ? Image.network(url, fit: BoxFit.cover, width: double.infinity,
-                            errorBuilder: (_, __, ___) => _imageFallback())
-                        : _imageFallback();
-                  },
+          if (image != null)
+            Stack(
+              alignment: Alignment.bottomCenter,
+              children: [
+                SizedBox(
+                  height: 320,
+                  child: _buildGymImage(image),
                 ),
-              ),
-              if (images.length > 1)
-                Positioned(
-                  bottom: 20,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(images.length, (index) {
-                      final isSelected = index == _currentImageIndex;
-                      return AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        margin: const EdgeInsets.symmetric(horizontal: 4),
-                        width: isSelected ? 24 : 8,
-                        height: 8,
-                        decoration: BoxDecoration(
-                          color: isSelected ? Colors.white : Colors.white54,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                      );
-                    }),
-                  ),
-                ),
-            ],
-          ).animate().fadeIn(duration: 400.ms),
-
+              ],
+            ).animate().fadeIn(duration: 400.ms),
           Padding(
-            padding: const EdgeInsets.all(20.0),
+            padding: EdgeInsets.fromLTRB(20, image == null ? 100 : 20, 20, 20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Title + Rating
                 Row(
                   children: [
                     Expanded(
                       child: Text(
                         gym.name,
-                        style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: 1),
+                        style: const TextStyle(
+                          fontSize: 26,
+                          fontWeight: FontWeight.w900,
+                          color: Colors.white,
+                          letterSpacing: 1,
+                        ),
                         maxLines: 2,
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    const Icon(Icons.star_rounded, color: Colors.amber, size: 20),
-                    const SizedBox(width: 4),
-                    Text(
-                      gym.rating.toStringAsFixed(1),
-                      style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
-                    ),
+                    if (gym.hasRating) ...[
+                      const SizedBox(width: 8),
+                      const Icon(
+                        Icons.star_rounded,
+                        color: AppColors.primary,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        gym.rating.toStringAsFixed(1),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
                     if (gym.isFeatured) ...[
                       const SizedBox(width: 10),
                       const FeaturedBadge(),
@@ -377,22 +426,50 @@ class _GymDetailScreenState extends State<GymDetailScreen> {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  '${gym.locationName} | ${gym.distanceLabel} Away',
-                  style: const TextStyle(color: Colors.white60, fontSize: 14, fontWeight: FontWeight.w500),
+                  [
+                    if (gym.locationName.isNotEmpty) gym.locationName,
+                    if (gym.distanceKm > 0) '${gym.distanceLabel} Away',
+                  ].join(' | '),
+                  style: const TextStyle(
+                    color: Colors.white60,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
 
                 const SizedBox(height: 20),
 
-                // Action Buttons
                 Row(
                   children: [
-                    _buildActionButton('Direction', true,  Icons.near_me_rounded,     _openDirections),
+                    _buildActionButton(
+                      'Direction',
+                      true,
+                      Icons.near_me_rounded,
+                      _openDirections,
+                    ),
                     const SizedBox(width: 8),
-                    _buildActionButton('Call',      false, Icons.call_rounded,         _callGym),
+                    _buildActionButton(
+                      'Call',
+                      false,
+                      Icons.call_rounded,
+                      _callGym,
+                    ),
                     const SizedBox(width: 8),
-                    _buildActionButton('Save',      false, gym.isSaved ? Icons.bookmark_rounded : Icons.bookmark_border_rounded, _toggleSave),
+                    _buildActionButton(
+                      'Save',
+                      false,
+                      gym.isSaved
+                          ? Icons.bookmark_rounded
+                          : Icons.bookmark_border_rounded,
+                      _toggleSave,
+                    ),
                     const SizedBox(width: 8),
-                    _buildActionButton('Share',     false, Icons.share_rounded,        _shareGym),
+                    _buildActionButton(
+                      'Share',
+                      false,
+                      Icons.share_rounded,
+                      _shareGym,
+                    ),
                   ],
                 ),
 
@@ -419,23 +496,43 @@ class _GymDetailScreenState extends State<GymDetailScreen> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              const Text('ACTIVE PARTNER FEED', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w900, letterSpacing: 1)),
+                              const Text(
+                                'ACTIVE PARTNER FEED',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: 1,
+                                ),
+                              ),
                               isGuest
                                   ? Switch(
                                       value: false,
                                       onChanged: (_) => _showUnlockModal(),
-                                      activeColor: AppColors.primary,
-                                      activeTrackColor: AppColors.primary.withOpacity(0.3),
+                                      activeThumbColor: AppColors.primary,
+                                      activeTrackColor: AppColors.primary
+                                          .withValues(alpha: 0.3),
                                       inactiveThumbColor: Colors.grey,
                                       inactiveTrackColor: Colors.white12,
                                     )
                                   : _isTogglingPartner
-                                      ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFFCBF135)))
+                                      ? const SizedBox(
+                                          width: 24,
+                                          height: 24,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            color: Color(0xFFCBF135),
+                                          ),
+                                        )
                                       : Switch(
                                           value: _myActiveStatus,
                                           onChanged: (val) async {
-                                            setState(() => _isTogglingPartner = true);
-                                            final res = await gymProvider.togglePartnerStatus(widget.gymId!);
+                                            setState(
+                                              () => _isTogglingPartner = true,
+                                            );
+                                            final res = await gymProvider
+                                                .togglePartnerStatus(
+                                                    widget.gymId!);
                                             if (mounted && res != null) {
                                               setState(() {
                                                 _myActiveStatus = res;
@@ -444,17 +541,26 @@ class _GymDetailScreenState extends State<GymDetailScreen> {
                                                   _gym = _gym!.copyWith(
                                                     isActivePartner: res,
                                                     activePartnersCount: res
-                                                        ? _gym!.activePartnersCount + 1
-                                                        : (_gym!.activePartnersCount > 0 ? _gym!.activePartnersCount - 1 : 0),
+                                                        ? _gym!.activePartnersCount +
+                                                            1
+                                                        : (_gym!.activePartnersCount >
+                                                                0
+                                                            ? _gym!.activePartnersCount -
+                                                                1
+                                                            : 0),
                                                   );
                                                 }
                                               });
                                             } else {
-                                              setState(() => _isTogglingPartner = false);
+                                              setState(
+                                                () =>
+                                                    _isTogglingPartner = false,
+                                              );
                                             }
                                           },
-                                          activeColor: AppColors.primary,
-                                          activeTrackColor: AppColors.primary.withOpacity(0.3),
+                                          activeThumbColor: AppColors.primary,
+                                          activeTrackColor: AppColors.primary
+                                              .withValues(alpha: 0.3),
                                           inactiveThumbColor: Colors.grey,
                                           inactiveTrackColor: Colors.white12,
                                         ),
@@ -469,7 +575,12 @@ class _GymDetailScreenState extends State<GymDetailScreen> {
                                   isGuest
                                       ? '3 people are currently looking for a partner here.'
                                       : '${gym.activePartnersCount} people are currently looking for a partner here.',
-                                  style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 13, fontWeight: FontWeight.bold, height: 1.4),
+                                  style: TextStyle(
+                                    color: Colors.white.withValues(alpha: 0.9),
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.bold,
+                                    height: 1.4,
+                                  ),
                                 ),
                               ),
                             ],
@@ -486,7 +597,9 @@ class _GymDetailScreenState extends State<GymDetailScreen> {
                                     itemCount: displayCount,
                                     itemBuilder: (context, index) {
                                       return Padding(
-                                        padding: const EdgeInsets.only(right: 12),
+                                        padding: const EdgeInsets.only(
+                                          right: 12,
+                                        ),
                                         child: GestureDetector(
                                           onTap: isGuest
                                               ? null
@@ -494,66 +607,118 @@ class _GymDetailScreenState extends State<GymDetailScreen> {
                                                   context.push(
                                                     AppRoutes.partnerProfile,
                                                     extra: {
-                                                      'partner': partners[index],
+                                                      'partner':
+                                                          partners[index],
                                                       'gymId': gym.id,
                                                       'gymName': gym.name,
                                                     },
                                                   );
                                                 },
                                           child: AnimatedContainer(
-                                            duration: const Duration(milliseconds: 150),
+                                            duration: const Duration(
+                                              milliseconds: 150,
+                                            ),
                                             width: 82,
                                             decoration: BoxDecoration(
                                               color: const Color(0xFF1C1C1C),
-                                              borderRadius: BorderRadius.circular(16),
+                                              borderRadius:
+                                                  BorderRadius.circular(16),
                                               border: Border.all(
                                                 color: Colors.white10,
                                                 width: 1,
                                               ),
                                             ),
-                                            padding: const EdgeInsets.symmetric(vertical: 8),
+                                            padding: const EdgeInsets.symmetric(
+                                              vertical: 8,
+                                            ),
                                             child: Column(
-                                              mainAxisAlignment: MainAxisAlignment.center,
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
                                               mainAxisSize: MainAxisSize.min,
                                               children: [
                                                 Stack(
                                                   children: [
                                                     Container(
-                                                      width: 40, height: 40,
-                                                      decoration: BoxDecoration(shape: BoxShape.circle, color: AppColors.primary),
-                                                      child: const Center(child: Icon(Icons.person_rounded, color: Colors.black, size: 24)),
+                                                      width: 40,
+                                                      height: 40,
+                                                      decoration:
+                                                          const BoxDecoration(
+                                                        shape: BoxShape.circle,
+                                                        color:
+                                                            AppColors.primary,
+                                                      ),
+                                                      child: const Center(
+                                                        child: Icon(
+                                                          Icons.person_rounded,
+                                                          color: Colors.black,
+                                                          size: 24,
+                                                        ),
+                                                      ),
                                                     ),
                                                     Positioned(
-                                                      right: 0, bottom: 0,
-                                                      child: Container(width: 10, height: 10,
-                                                        decoration: BoxDecoration(color: const Color(0xFF4DFF91), shape: BoxShape.circle,
-                                                          border: Border.all(color: const Color(0xFF1C1C1C), width: 1.5)),
+                                                      right: 0,
+                                                      bottom: 0,
+                                                      child: Container(
+                                                        width: 10,
+                                                        height: 10,
+                                                        decoration:
+                                                            BoxDecoration(
+                                                          color: const Color(
+                                                            0xFF4DFF91,
+                                                          ),
+                                                          shape:
+                                                              BoxShape.circle,
+                                                          border: Border.all(
+                                                            color: const Color(
+                                                              0xFF1C1C1C,
+                                                            ),
+                                                            width: 1.5,
+                                                          ),
+                                                        ),
                                                       ),
                                                     ),
                                                   ],
                                                 ),
                                                 const SizedBox(height: 6),
                                                 Text(
-                                                  isGuest ? '••••' : (partners[index]['name'] ?? ''),
-                                                  style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                                                  isGuest
+                                                      ? '••••'
+                                                      : (partners[index]
+                                                              ['name'] ??
+                                                          ''),
+                                                  style: const TextStyle(
+                                                    color: Colors.white,
+                                                    fontSize: 10,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
                                                   maxLines: 1,
-                                                  overflow: TextOverflow.ellipsis,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
                                                 ),
                                                 const SizedBox(height: 2),
                                                 Text(
-                                                  isGuest ? '••••' : (partners[index]['status'] ?? 'Active Now'),
-                                                  style: const TextStyle(color: Color(0xFF4DFF91), fontSize: 7, fontWeight: FontWeight.w600),
+                                                  isGuest
+                                                      ? '••••'
+                                                      : (partners[index]
+                                                              ['status'] ??
+                                                          'Active Now'),
+                                                  style: const TextStyle(
+                                                    color: Color(0xFF4DFF91),
+                                                    fontSize: 7,
+                                                    fontWeight: FontWeight.w600,
+                                                  ),
                                                 ),
                                                 if (!isGuest) ...[
                                                   const SizedBox(height: 4),
-                                                  Text(
+                                                  const Text(
                                                     'TAP TO MATCH',
                                                     textAlign: TextAlign.center,
                                                     maxLines: 1,
                                                     style: TextStyle(
                                                       color: AppColors.primary,
                                                       fontSize: 6,
-                                                      fontWeight: FontWeight.w900,
+                                                      fontWeight:
+                                                          FontWeight.w900,
                                                       letterSpacing: 0.3,
                                                     ),
                                                   ),
@@ -574,19 +739,33 @@ class _GymDetailScreenState extends State<GymDetailScreen> {
                                       child: ClipRRect(
                                         borderRadius: BorderRadius.circular(16),
                                         child: BackdropFilter(
-                                          filter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
+                                          filter: ImageFilter.blur(
+                                            sigmaX: 6,
+                                            sigmaY: 6,
+                                          ),
                                           child: Container(
-                                            color: Colors.black.withOpacity(0.3),
+                                            color: Colors.black.withValues(
+                                              alpha: 0.3,
+                                            ),
                                             child: Center(
                                               child: Container(
-                                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                  horizontal: 14,
+                                                  vertical: 8,
+                                                ),
                                                 decoration: BoxDecoration(
                                                   color: AppColors.primary,
-                                                  borderRadius: BorderRadius.circular(20),
+                                                  borderRadius:
+                                                      BorderRadius.circular(20),
                                                 ),
                                                 child: const Text(
                                                   'Sign In to See',
-                                                  style: TextStyle(color: Colors.black, fontSize: 12, fontWeight: FontWeight.w900),
+                                                  style: TextStyle(
+                                                    color: Colors.black,
+                                                    fontSize: 12,
+                                                    fontWeight: FontWeight.w900,
+                                                  ),
                                                 ),
                                               ),
                                             ),
@@ -602,7 +781,11 @@ class _GymDetailScreenState extends State<GymDetailScreen> {
                               padding: EdgeInsets.symmetric(vertical: 12),
                               child: Text(
                                 'No other partners active at the moment. Toggle your status above to let others match with you!',
-                                style: TextStyle(color: Colors.white38, fontSize: 12, height: 1.4),
+                                style: TextStyle(
+                                  color: Colors.white38,
+                                  fontSize: 12,
+                                  height: 1.4,
+                                ),
                               ),
                             ),
                         ],
@@ -613,130 +796,129 @@ class _GymDetailScreenState extends State<GymDetailScreen> {
 
                 const SizedBox(height: 28),
 
-                // AMENITIES & INFO
-                const Text('AMENITIES & INFO', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900, letterSpacing: 1.2)),
-                const SizedBox(height: 6),
-                Text(
-                  '${gym.isOpen ? "OPEN NOW" : "CLOSED"}: ${gym.openHours}',
-                  style: TextStyle(color: gym.isOpen ? AppColors.primary : Colors.white38, fontSize: 14, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 12),
-                gym.amenities.isNotEmpty
-                    ? Wrap(
-                        spacing: 8, runSpacing: 8,
-                        children: gym.amenities.map((amenity) => Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                          decoration: BoxDecoration(color: const Color(0xFF1A1A1A), borderRadius: BorderRadius.circular(20)),
-                          child: Text(amenity, style: const TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w500)),
-                        )).toList(),
-                      )
-                    : const Text('No amenity info available.', style: TextStyle(color: Colors.white38)),
-
-                const SizedBox(height: 28),
-
-                // MEMBERSHIP PLANS
-                if (gym.plans.isNotEmpty) ...[
-                  const Text('MEMBERSHIP PLANS', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900, letterSpacing: 1.2)),
-                  const SizedBox(height: 16),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: gym.plans.asMap().entries.map((entry) {
-                      final plan = entry.value;
-                      final isPremium = plan.isPremium;
-                      return Expanded(
-                        child: Padding(
-                          padding: EdgeInsets.only(left: entry.key > 0 ? 12 : 0),
-                          child: Stack(
-                            clipBehavior: Clip.none,
-                            children: [
-                              Container(
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF141414),
-                                  borderRadius: BorderRadius.circular(20),
-                                  border: Border.all(
-                                    color: isPremium ? AppColors.primary : Colors.white10,
-                                    width: isPremium ? 2 : 1,
-                                  ),
-                                ),
-                                padding: const EdgeInsets.all(16),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    if (isPremium) const SizedBox(height: 8),
-                                    Text(
-                                      plan.name,
-                                      style: TextStyle(
-                                        color: isPremium ? AppColors.primary : Colors.white,
-                                        fontSize: isPremium ? 14 : 15,
-                                        fontWeight: FontWeight.w900,
-                                        height: 1.1,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 12),
-                                    Row(
-                                      crossAxisAlignment: CrossAxisAlignment.baseline,
-                                      textBaseline: TextBaseline.alphabetic,
-                                      children: [
-                                        Text(
-                                          '\$${plan.price.toStringAsFixed(0)}',
-                                          style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.w900),
-                                        ),
-                                        Text(
-                                          '/${plan.billingPeriod}',
-                                          style: const TextStyle(color: Colors.white60, fontSize: 14),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 12),
-                                    ..._buildPlanBullets(plan.features),
-                                    if (isPremium) ...[
-                                      const SizedBox(height: 16),
-                                      SizedBox(
-                                        width: double.infinity, height: 38,
-                                        child: ElevatedButton(
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor: AppColors.primary,
-                                            foregroundColor: Colors.black,
-                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(19)),
-                                            padding: EdgeInsets.zero,
-                                          ),
-                                          onPressed: () {},
-                                          child: const Text('SELECT', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900)),
-                                        ),
-                                      ),
-                                    ],
-                                  ],
-                                ),
-                              ),
-                              if (isPremium)
-                                Positioned(
-                                  top: -10, right: 12,
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                    decoration: BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.circular(4)),
-                                    child: const Text('PREMIUM', style: TextStyle(color: Colors.black, fontSize: 9, fontWeight: FontWeight.w900)),
-                                  ),
-                                ),
-                            ],
+                if (hoursLines.isNotEmpty) ...[
+                  const Text(
+                    'HOURS & INFO',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF141414),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.white12),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          gym.isOpen ? 'OPEN NOW' : 'CLOSED',
+                          style: TextStyle(
+                            color:
+                                gym.isOpen ? AppColors.primary : Colors.white38,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 0.8,
                           ),
+                        ),
+                        const SizedBox(height: 10),
+                        ...hoursLines.map(
+                          (line) => Padding(
+                            padding: const EdgeInsets.only(bottom: 7),
+                            child: Text(
+                              line,
+                              softWrap: true,
+                              style: const TextStyle(
+                                color: Colors.white70,
+                                fontSize: 13,
+                                height: 1.35,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 28),
+                ],
+
+                if (gym.amenities.isNotEmpty) ...[
+                  const Text(
+                    'AMENITIES',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  Wrap(
+                    spacing: 10,
+                    runSpacing: 10,
+                    children: gym.amenities.map((amenity) {
+                      return Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 9,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF141414),
+                          borderRadius: BorderRadius.circular(18),
+                          border: Border.all(color: Colors.white12),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.check_circle_rounded,
+                              color: AppColors.primary,
+                              size: 16,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              amenity,
+                              style: const TextStyle(
+                                color: Colors.white70,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
                         ),
                       );
                     }).toList(),
                   ),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 28),
                 ],
 
-                // Call to Book a Tour Button
                 SizedBox(
-                  width: double.infinity, height: 56,
+                  width: double.infinity,
+                  height: 56,
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
                       foregroundColor: Colors.black,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(28),
+                      ),
                     ),
                     onPressed: _callGym,
-                    child: const Text('CALL TO BOOK A TOUR', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
+                    child: const Text(
+                      'CALL GYM',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 24),
@@ -748,14 +930,12 @@ class _GymDetailScreenState extends State<GymDetailScreen> {
     );
   }
 
-  Widget _imageFallback() {
-    return Container(
-      height: 320, color: const Color(0xFF1A1A1A),
-      child: const Center(child: Icon(Icons.fitness_center_rounded, color: Colors.white24, size: 60)),
-    );
-  }
-
-  Widget _buildActionButton(String label, bool isPrimary, IconData icon, VoidCallback onTap) {
+  Widget _buildActionButton(
+    String label,
+    bool isPrimary,
+    IconData icon,
+    VoidCallback onTap,
+  ) {
     return Expanded(
       child: GestureDetector(
         onTap: onTap,
@@ -764,14 +944,34 @@ class _GymDetailScreenState extends State<GymDetailScreen> {
           decoration: BoxDecoration(
             color: isPrimary ? AppColors.primary : Colors.transparent,
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: isPrimary ? AppColors.primary : Colors.white24),
-            boxShadow: isPrimary ? [BoxShadow(color: AppColors.primary.withOpacity(0.3), blurRadius: 6)] : null,
+            border: Border.all(
+              color: isPrimary ? AppColors.primary : Colors.white24,
+            ),
+            boxShadow: isPrimary
+                ? [
+                    BoxShadow(
+                      color: AppColors.primary.withValues(alpha: 0.3),
+                      blurRadius: 6,
+                    ),
+                  ]
+                : null,
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, color: isPrimary ? Colors.black : Colors.white, size: 14),
-              Text(label, style: TextStyle(color: isPrimary ? Colors.black : Colors.white, fontWeight: FontWeight.w700, fontSize: 10)),
+              Icon(
+                icon,
+                color: isPrimary ? Colors.black : Colors.white,
+                size: 14,
+              ),
+              Text(
+                label,
+                style: TextStyle(
+                  color: isPrimary ? Colors.black : Colors.white,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 10,
+                ),
+              ),
             ],
           ),
         ),
@@ -779,16 +979,49 @@ class _GymDetailScreenState extends State<GymDetailScreen> {
     );
   }
 
-  List<Widget> _buildPlanBullets(List<String> bullets) {
-    return bullets.map((bullet) => Padding(
-      padding: const EdgeInsets.only(bottom: 6),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Padding(padding: EdgeInsets.only(top: 4, right: 6), child: Icon(Icons.circle, size: 4, color: Colors.white70)),
-          Expanded(child: Text(bullet, style: const TextStyle(color: Colors.white70, fontSize: 11, height: 1.3))),
-        ],
+  List<String> _formatHoursLines(String openHours) {
+    return openHours
+        .split(RegExp(r'\s+\|\s+'))
+        .map((line) => line.trim())
+        .where((line) => line.isNotEmpty)
+        .toList();
+  }
+
+  Widget _buildImageFallback({bool isLoading = false}) {
+    return Container(
+      height: 320,
+      width: double.infinity,
+      color: const Color(0xFF101010),
+      child: Center(
+        child: isLoading
+            ? const SizedBox(
+                width: 26,
+                height: 26,
+                child: CircularProgressIndicator(
+                  color: AppColors.primary,
+                  strokeWidth: 2.4,
+                ),
+              )
+            : const Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.fitness_center_rounded,
+                    color: Colors.white24,
+                    size: 54,
+                  ),
+                  SizedBox(height: 10),
+                  Text(
+                    'Photo unavailable',
+                    style: TextStyle(
+                      color: Colors.white38,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
       ),
-    )).toList();
+    );
   }
 }
