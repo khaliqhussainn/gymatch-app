@@ -71,8 +71,13 @@ exports.login = async (req, res) => {
     }
 
     if (!user.password) {
+      const provider = user.apple_id
+        ? 'Apple'
+        : user.google_id
+          ? 'Google'
+          : 'social';
       return res.status(400).json({
-        error: 'This account uses Google Sign-In. Please sign in with Google.'
+        error: `This account uses ${provider} Sign-In. Please sign in with ${provider}.`
       });
     }
 

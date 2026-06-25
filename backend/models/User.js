@@ -70,10 +70,14 @@ class User {
       throw new Error('Apple user ID is missing in token payload');
     }
 
+    const cleanDisplayName = displayName && displayName.trim()
+      ? displayName.trim()
+      : null;
+
     let user = await this.findByAppleId(appleId);
     if (user) {
-      if (displayName && displayName.trim()) {
-        await this.updateMissingProfileName(user.id, displayName.trim());
+      if (cleanDisplayName) {
+        await this.updateMissingProfileName(user.id, cleanDisplayName);
       }
       return user;
     }
@@ -84,8 +88,8 @@ class User {
       if (user) {
         await pool.query('UPDATE users SET apple_id = ? WHERE id = ?', [appleId, user.id]);
         user.apple_id = appleId;
-        if (displayName && displayName.trim()) {
-          await this.updateMissingProfileName(user.id, displayName.trim());
+        if (cleanDisplayName) {
+          await this.updateMissingProfileName(user.id, cleanDisplayName);
         }
         return user;
       }
@@ -97,7 +101,7 @@ class User {
     try {
       await pool.query(
         'INSERT INTO profiles (user_id, name) VALUES (?, ?)',
-        [user.id, displayName || null]
+        [user.id, cleanDisplayName]
       );
     } catch (profileErr) {
       console.error('[User.findOrCreateAppleUser.createProfile]', profileErr);

@@ -70,6 +70,7 @@ class AuthProvider extends ChangeNotifier {
       _isGuest = false;
 
       await _apiClient.saveToken(_token!);
+      await fetchProfile();
     } on DioException catch (e) {
       if (e.error is NetworkException) {
         _errorMessage = e.error.toString();
@@ -106,6 +107,17 @@ class AuthProvider extends ChangeNotifier {
       });
 
       final data = response.data;
+      if (response.statusCode != null && response.statusCode! >= 400) {
+        _errorMessage = _messageFromResponse(data) ??
+            'Invalid request. Please check your input.';
+        return;
+      }
+
+      if (data == null || data['token'] == null) {
+        _errorMessage = 'Registration failed. Please try again.';
+        return;
+      }
+
       _token = data['token'];
       _userId = data['userId'];
       _role = data['role'] ?? 'user';
@@ -114,6 +126,7 @@ class AuthProvider extends ChangeNotifier {
 
       if (_token != null) {
         await _apiClient.saveToken(_token!);
+        await fetchProfile();
       }
     } on DioException catch (e) {
       if (e.error is NetworkException) {
@@ -152,6 +165,7 @@ class AuthProvider extends ChangeNotifier {
 
       if (_token != null) {
         await _apiClient.saveToken(_token!);
+        await fetchProfile();
       }
     } on DioException catch (e) {
       if (e.error is NetworkException) {
@@ -437,10 +451,18 @@ class AuthProvider extends ChangeNotifier {
     
     try {
       final response = await _apiClient.dio.get('/users/profile');
+      if (response.statusCode != null && response.statusCode! >= 400) {
+        _errorMessage = _messageFromResponse(response.data) ??
+            'Failed to load profile details.';
+        notifyListeners();
+        return;
+      }
+
       _userProfile = Map<String, dynamic>.from(response.data);
       if (_userProfile != null) {
         _email = _userProfile!['email'];
       }
+      _errorMessage = null;
       notifyListeners();
     } on DioException catch (e) {
       _errorMessage = e.error is NetworkException 
@@ -470,7 +492,7 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      await _apiClient.dio.put('/users/profile', data: {
+      final response = await _apiClient.dio.put('/users/profile', data: {
         'name': name,
         'age': age,
         'gender': gender,
@@ -480,7 +502,17 @@ class AuthProvider extends ChangeNotifier {
         if (profileImage != null) 'profileImage': profileImage,
         'aboutMe': aboutMe,
       });
+      if (response.statusCode != null && response.statusCode! >= 400) {
+        _errorMessage = _messageFromResponse(response.data) ??
+            'Failed to update profile.';
+        notifyListeners();
+        return false;
+      }
+
       await fetchProfile();
+      if (_errorMessage != null) {
+        return false;
+      }
       return true;
     } on DioException catch (e) {
       _errorMessage = e.error is NetworkException 

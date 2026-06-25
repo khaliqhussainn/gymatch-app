@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const authRoutes = require('./routes/authRoutes');
+const adminAuthRoutes = require('./routes/adminAuthRoutes');
 const gymRoutes = require('./routes/gymRoutes');
 const userRoutes = require('./routes/userRoutes');
 const chatRoutes = require('./routes/chatRoutes');
@@ -14,7 +15,7 @@ const PORT = process.env.PORT || 5000;
 
 // Middleware
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
 
 // Routes
 app.use('/api/auth', authRoutes);
@@ -31,11 +32,20 @@ app.get('/auth-check', async (req, res) => {
   const pool = require('./config/connection');
   try {
     const [rows] = await pool.query(
-      'SELECT id, email, password IS NOT NULL as has_password, google_id IS NOT NULL as is_google FROM users WHERE email = ?',
+      `SELECT id, email,
+              password IS NOT NULL as has_password,
+              google_id IS NOT NULL as is_google,
+              apple_id IS NOT NULL as is_apple
+       FROM users WHERE email = ?`,
       [email.toLowerCase()]
     );
     if (!rows.length) return res.json({ exists: false, message: 'No account with this email' });
-    res.json({ exists: true, has_password: !!rows[0].has_password, is_google: !!rows[0].is_google });
+    res.json({
+      exists: true,
+      has_password: !!rows[0].has_password,
+      is_google: !!rows[0].is_google,
+      is_apple: !!rows[0].is_apple
+    });
   } catch(e) {
     res.status(500).json({ error: e.message });
   }
@@ -53,7 +63,10 @@ app.get('/login-check', async (req, res) => {
   try {
     const user = await User.findByEmail(email.toLowerCase());
     if (!user) return res.json({ result: 'FAIL', reason: 'User not found' });
-    if (!user.password) return res.json({ result: 'FAIL', reason: 'Google-only account' });
+    if (!user.password) {
+      const provider = user.apple_id ? 'Apple' : user.google_id ? 'Google' : 'social';
+      return res.json({ result: 'FAIL', reason: `${provider}-only account` });
+    }
     const match = await bcrypt.compare(password, user.password);
     res.json({ result: match ? 'OK' : 'FAIL', reason: match ? 'Password correct' : 'Wrong password' });
   } catch(e) {

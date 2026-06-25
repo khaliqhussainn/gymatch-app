@@ -475,6 +475,19 @@ exports.runMigrations = async (req, res) => {
       }
     }
 
+    // ── Migration 9: Add apple_id column to users ───────────────────────
+    log('\n[9/9] Checking apple_id column on users table...');
+    try {
+      await pool.query(`ALTER TABLE users ADD COLUMN apple_id VARCHAR(255) UNIQUE NULL AFTER google_id`);
+      log('  ✓ apple_id column added to users.');
+    } catch (e) {
+      if (e.errno === 1060 || (e.message && e.message.includes('Duplicate column'))) {
+        log('  ✓ apple_id column already exists, skipped.');
+      } else {
+        log(`  ⚠️ Could not add apple_id column: ${e.message}`);
+      }
+    }
+
     // ── Summary ─────────────────────────────────────────────────────────
     log('\n═══════════════════════════════════════');
     log('  All migrations completed successfully');

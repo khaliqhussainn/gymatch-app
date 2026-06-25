@@ -19,6 +19,7 @@ class ApiClient {
 
   late final Dio _dio;
   final _secureStorage = const FlutterSecureStorage();
+  String? _cachedToken;
   static const _tokenKey = 'jwt_token';
   static const _iosSecureOptions = IOSOptions(
     accessibility: KeychainAccessibility.first_unlock,
@@ -58,7 +59,7 @@ class ApiClient {
 
     _dio.interceptors.add(InterceptorsWrapper(
       onRequest: (options, handler) async {
-        final token = await _secureStorage.read(key: 'jwt_token');
+        final token = await getToken();
         if (token != null) {
           options.headers['Authorization'] = 'Bearer $token';
         }
@@ -132,6 +133,7 @@ class ApiClient {
   Dio get dio => _dio;
 
   Future<void> saveToken(String token) async {
+    _cachedToken = token;
     await _secureStorage.write(
       key: _tokenKey,
       value: token,
@@ -140,11 +142,18 @@ class ApiClient {
   }
 
   Future<String?> getToken() async {
+    if (_cachedToken != null && _cachedToken!.isNotEmpty) {
+      return _cachedToken;
+    }
+
     final token = await _secureStorage.read(
       key: _tokenKey,
       iOptions: _iosSecureOptions,
     );
-    if (token != null) return token;
+    if (token != null) {
+      _cachedToken = token;
+      return token;
+    }
 
     final legacyToken = await _secureStorage.read(key: _tokenKey);
     if (legacyToken != null) {
@@ -154,6 +163,7 @@ class ApiClient {
   }
 
   Future<void> deleteToken() async {
+    _cachedToken = null;
     await _secureStorage.delete(
       key: _tokenKey,
       iOptions: _iosSecureOptions,
