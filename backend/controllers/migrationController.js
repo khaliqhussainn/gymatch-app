@@ -22,7 +22,7 @@ exports.runMigrations = async (req, res) => {
     log('═══════════════════════════════════════');
 
     // ── Migration 1: is_featured column ─────────────────────────────────
-    log('\n[1/3] Checking is_featured column on gyms table...');
+    log('\n[1/11] Checking is_featured column on gyms table...');
     try {
       await pool.query(`
         ALTER TABLE gyms
@@ -50,7 +50,7 @@ exports.runMigrations = async (req, res) => {
     }
 
     // ── Migration 2: chat_threads table ─────────────────────────────────
-    log('\n[2/3] Checking chat_threads table...');
+    log('\n[2/11] Checking chat_threads table...');
     try {
       await pool.query(`
         CREATE TABLE IF NOT EXISTS chat_threads (
@@ -85,7 +85,7 @@ exports.runMigrations = async (req, res) => {
     } catch (e) { log(`  ⚠️ chat_messages: ${e.message}`); }
 
     // ── Migration 3: notifications table ────────────────────────────────
-    log('\n[3/3] Checking notifications table...');
+    log('\n[3/11] Checking notifications table...');
     try {
       await pool.query(`
         CREATE TABLE IF NOT EXISTS notifications (
@@ -104,7 +104,7 @@ exports.runMigrations = async (req, res) => {
     } catch (e) { log(`  ⚠️ notifications: ${e.message}`); }
 
     // ── Migration 4: Seed new testing gyms (Venice Beach CA, Copacabana Brazil, Washington DC, Toronto Canada) ────
-    log('\n[4/4] Checking and seeding new test gyms (IDs 7 to 32)...');
+    log('\n[4/11] Checking and seeding new test gyms (IDs 7 to 32)...');
     try {
       const [existingGyms] = await pool.query('SELECT id FROM gyms WHERE id IN (7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32)');
       const existingIds = existingGyms.map(g => g.id);
@@ -422,7 +422,7 @@ exports.runMigrations = async (req, res) => {
     }
 
     // ── Migration 5: Add profile_image column to profiles ───────────────
-    log('\n[5/7] Checking profile_image column on profiles table...');
+    log('\n[5/11] Checking profile_image column on profiles table...');
     try {
       await pool.query(`ALTER TABLE profiles ADD COLUMN profile_image LONGTEXT NULL AFTER availability`);
       log('  ✓ profile_image column added to profiles.');
@@ -435,7 +435,7 @@ exports.runMigrations = async (req, res) => {
     }
 
     // ── Migration 6: Fix gym categories — remove 'Women', remap to new list ─
-    log('\n[6/7] Updating gym categories (removing legacy "Women" category)...');
+    log('\n[6/11] Updating gym categories (removing legacy "Women" category)...');
     try {
       const [womenGyms] = await pool.query(`SELECT id, name FROM gyms WHERE category = 'Women'`);
       if (womenGyms.length > 0) {
@@ -450,7 +450,7 @@ exports.runMigrations = async (req, res) => {
     }
 
     // ── Migration 7: Add about_me column to profiles ─────────────────────
-    log('\n[7/8] Checking about_me column on profiles table...');
+    log('\n[7/11] Checking about_me column on profiles table...');
     try {
       await pool.query(`ALTER TABLE profiles ADD COLUMN about_me TEXT NULL AFTER availability`);
       log('  ✓ about_me column added to profiles.');
@@ -463,7 +463,7 @@ exports.runMigrations = async (req, res) => {
     }
 
     // ── Migration 8: Add google_place_id column to gyms ──────────────────
-    log('\n[8/8] Checking google_place_id column on gyms table...');
+    log('\n[8/11] Checking google_place_id column on gyms table...');
     try {
       await pool.query(`ALTER TABLE gyms ADD COLUMN google_place_id VARCHAR(255) UNIQUE NULL AFTER is_featured`);
       log('  ✓ google_place_id column added to gyms.');
@@ -476,7 +476,7 @@ exports.runMigrations = async (req, res) => {
     }
 
     // ── Migration 9: Add apple_id column to users ───────────────────────
-    log('\n[9/9] Checking apple_id column on users table...');
+    log('\n[9/11] Checking apple_id column on users table...');
     try {
       await pool.query(`ALTER TABLE users ADD COLUMN apple_id VARCHAR(255) UNIQUE NULL AFTER google_id`);
       log('  ✓ apple_id column added to users.');
@@ -485,6 +485,101 @@ exports.runMigrations = async (req, res) => {
         log('  ✓ apple_id column already exists, skipped.');
       } else {
         log(`  ⚠️ Could not add apple_id column: ${e.message}`);
+      }
+    }
+
+    // ── Migration 10: Create gym_categories table ─────────────────────
+    log('\n[10/11] Checking gym_categories table...');
+    try {
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS gym_categories (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          name VARCHAR(255) NOT NULL,
+          status ENUM('active', 'inactive') DEFAULT 'active',
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        )
+      `);
+      log('  ✓ gym_categories table ready.');
+    } catch (e) {
+      log(`  ⚠️ gym_categories table: ${e.message}`);
+    }
+
+    // ── Seed gym categories ───────────────────────────────────────────
+    log('\n[11/12] Seeding gym categories...');
+    try {
+      const [existingCategories] = await pool.query('SELECT id FROM gym_categories');
+      const existingIds = existingCategories.map(c => c.id);
+
+      const categoriesToSeed = [
+        { id: 1, name: 'GYM' },
+        { id: 2, name: 'CrossFit' },
+        { id: 3, name: 'Yoga' },
+        { id: 4, name: 'MMA' },
+        { id: 5, name: 'Functional Fitness' },
+        { id: 6, name: 'Pilates' },
+        { id: 7, name: 'Boxing' },
+        { id: 8, name: 'Personal Training' },
+      ];
+
+      for (const category of categoriesToSeed) {
+        if (!existingIds.includes(category.id)) {
+          await pool.query(
+            'INSERT INTO gym_categories (id, name, status) VALUES (?, ?, "active")',
+            [category.id, category.name]
+          );
+          log(`  ✓ Category "${category.name}" seeded.`);
+        }
+      }
+      log('  ✓ Gym categories seeded successfully.');
+    } catch (seedErr) {
+      fail(`  ⚠️ Seeding gym categories failed: ${seedErr.message}`);
+    }
+
+    // ── Migration 12: Add status column to users table ──────────────────
+    log('\n[12/13] Checking status column on users table...');
+    try {
+      await pool.query(`ALTER TABLE users ADD COLUMN status ENUM('active', 'suspended') DEFAULT 'active' AFTER role`);
+      log('  ✓ status column added to users.');
+    } catch (e) {
+      if (e.errno === 1060 || (e.message && e.message.includes('Duplicate column'))) {
+        log('  ✓ status column already exists, skipped.');
+      } else {
+        log(`  ⚠️ Could not add status column: ${e.message}`);
+      }
+    }
+
+    // ── Migration 13: Create feature_requests table ─────────────────────
+    log('\n[13/14] Checking feature_requests table...');
+    try {
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS feature_requests (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          request_type ENUM('gym', 'user') NOT NULL,
+          entity_id INT NOT NULL,
+          requester_id INT NOT NULL,
+          status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending',
+          reason TEXT,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+          FOREIGN KEY (requester_id) REFERENCES users(id) ON DELETE CASCADE
+        )
+      `);
+      log('  ✓ feature_requests table ready.');
+    } catch (e) {
+      log(`  ⚠️ feature_requests table: ${e.message}`);
+    }
+
+    // ── Migration 14: Add is_featured column to profiles table ───────────
+    log('\n[14/14] Checking is_featured column on profiles table...');
+    try {
+      await pool.query(`ALTER TABLE profiles ADD COLUMN is_featured BOOLEAN DEFAULT FALSE AFTER about_me`);
+      log('  ✓ is_featured column added to profiles.');
+    } catch (e) {
+      if (e.errno === 1060 || (e.message && e.message.includes('Duplicate column'))) {
+        log('  ✓ is_featured column already exists, skipped.');
+      } else {
+        log(`  ⚠️ Could not add is_featured column: ${e.message}`);
       }
     }
 

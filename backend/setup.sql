@@ -7,6 +7,7 @@ CREATE TABLE users (
   email VARCHAR(255) UNIQUE NOT NULL,
   password VARCHAR(255),
   google_id VARCHAR(255) UNIQUE,
+  apple_id VARCHAR(255) UNIQUE,
   role ENUM('guest', 'user', 'admin') DEFAULT 'user',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

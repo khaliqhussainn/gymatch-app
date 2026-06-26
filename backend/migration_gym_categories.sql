@@ -1,0 +1,8 @@
+-- Create gym_categories table
+CREATE TABLE IF NOT EXISTS gym_categories (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  status ENUM('active', 'inactive') DEFAULT 'active',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);

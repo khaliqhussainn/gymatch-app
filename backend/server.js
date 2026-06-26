@@ -3,6 +3,11 @@ const express = require('express');
 const cors = require('cors');
 const authRoutes = require('./routes/authRoutes');
 const adminAuthRoutes = require('./routes/adminAuthRoutes');
+const adminCategoryRoutes = require('./routes/adminCategoryRoutes');
+const adminUserRoutes = require('./routes/adminUserRoutes');
+const adminFeatureRequestRoutes = require('./routes/adminFeatureRequestRoutes');
+const adminGymRoutes = require('./routes/adminGymRoutes');
+const adminDashboardRoutes = require('./routes/adminDashboardRoutes');
 const gymRoutes = require('./routes/gymRoutes');
 const userRoutes = require('./routes/userRoutes');
 const chatRoutes = require('./routes/chatRoutes');
@@ -19,6 +24,12 @@ app.use(express.json({ limit: '10mb' }));
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/admin/auth', adminAuthRoutes);
+app.use('/api/admin/categories', adminCategoryRoutes);
+app.use('/api/admin/users', adminUserRoutes);
+app.use('/api/admin/feature-requests', adminFeatureRequestRoutes);
+app.use('/api/admin/gyms', adminGymRoutes);
+app.use('/api/admin/dashboard', adminDashboardRoutes);
 app.use('/api/gyms', gymRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/chats', chatRoutes);
