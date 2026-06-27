@@ -537,6 +537,23 @@ class _LoginScreenState extends State<LoginScreen> {
                   ],
                 ).animate().fadeIn(delay: 620.ms, duration: 400.ms),
 
+                const SizedBox(height: 8),
+
+                // Register a GYM
+                GestureDetector(
+                  onTap: () => context.go(AppRoutes.gymRegistration),
+                  child: Text(
+                    'Register a GYM',
+                    style: TextStyle(
+                      color: AppColors.primary,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      decoration: TextDecoration.underline,
+                      decorationColor: AppColors.primary,
+                    ),
+                  ),
+                ).animate().fadeIn(delay: 640.ms, duration: 400.ms),
+
                 const SizedBox(height: 32),
               ],
             ),

@@ -19,4 +19,8 @@ router.get('/:id/active-partners', authMiddleware.optionalAuthenticate, gymContr
 router.post('/:id/favorite', authMiddleware.authenticate, gymController.toggleFavorite);
 router.post('/:id/partner-toggle', authMiddleware.authenticate, gymController.togglePartnerStatus);
 
+// Gym owner routes
+router.get('/:id/partners', authMiddleware.authenticate, gymController.getGymPartners);
+router.put('/:id', authMiddleware.authenticate, gymController.updateGymDetails);
+
 module.exports = router;

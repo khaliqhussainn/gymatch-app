@@ -9,9 +9,11 @@ export default function AdminSignIn() {
                 title="Admin Sign In | Property Management"
                 description="Admin Sign In"
             />
-            <AuthLayout>
+            {/* <AuthLayout> */}
+            <div className="my-auto flex justify-center items-center min-h-screen">
                 <AdminSignInForm />
-            </AuthLayout>
+                </div>
+            {/* </AuthLayout> */}
         </>
     );
 }

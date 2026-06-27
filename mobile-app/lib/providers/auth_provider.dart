@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import '../services/api_client.dart';
@@ -140,6 +141,83 @@ class AuthProvider extends ChangeNotifier {
         }
       } else {
         _errorMessage = 'An error occurred during registration. Please try again.';
+      }
+    } catch (e) {
+      _errorMessage = 'An unexpected error occurred. Please try again.';
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> registerGymOwner({
+    required String email,
+    required String password,
+    required String name,
+    required String gymName,
+    required String locationName,
+    required String location,
+    required String category,
+    String? contactPhone,
+  }) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      FormData formData = FormData();
+      
+      // Add text fields
+      formData.fields.addAll([
+        MapEntry('email', email.trim()),
+        MapEntry('password', password),
+        MapEntry('name', name),
+        MapEntry('gymName', gymName),
+        MapEntry('locationName', locationName),
+        MapEntry('location', location),
+        MapEntry('category', category),
+        if (contactPhone != null) MapEntry('contactPhone', contactPhone),
+      ]);
+      
+      final response = await _apiClient.dio.post(
+        '/auth/register-gym-owner',
+        data: formData,
+      );
+
+      final data = response.data;
+      if (response.statusCode != null && response.statusCode! >= 400) {
+        _errorMessage = _messageFromResponse(data) ??
+            'Invalid request. Please check your input.';
+        return;
+      }
+
+      if (data == null || data['token'] == null) {
+        _errorMessage = 'Gym registration failed. Please try again.';
+        return;
+      }
+
+      _token = data['token'];
+      _userId = data['userId'];
+      _role = data['role'] ?? 'gym_owner';
+      _email = email.trim();
+      _isGuest = false;
+
+      if (_token != null) {
+        await _apiClient.saveToken(_token!);
+        await fetchProfile();
+      }
+    } on DioException catch (e) {
+      if (e.error is NetworkException) {
+        _errorMessage = e.error.toString();
+      } else if (e.response?.statusCode == 400) {
+        final data = e.response?.data;
+        if (data is Map && data.containsKey('error')) {
+          _errorMessage = data['error'];
+        } else {
+          _errorMessage = 'Invalid request. Please check your input.';
+        }
+      } else {
+        _errorMessage = 'An error occurred during gym registration. Please try again.';
       }
     } catch (e) {
       _errorMessage = 'An unexpected error occurred. Please try again.';
@@ -459,6 +537,8 @@ class AuthProvider extends ChangeNotifier {
       }
 
       _userProfile = Map<String, dynamic>.from(response.data);
+      print('[AuthProvider.fetchProfile] Profile data: $_userProfile');
+      print('[AuthProvider.fetchProfile] Gym ID from profile: ${_userProfile?['gymId']}');
       if (_userProfile != null) {
         _email = _userProfile!['email'];
       }

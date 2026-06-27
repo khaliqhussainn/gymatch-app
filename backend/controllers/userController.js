@@ -53,11 +53,13 @@ exports.registerUser = async (req, res) => {
 exports.getProfile = async (req, res) => {
   try {
     const userId = req.user.userId;
+    console.log('[UserController.getProfile] Fetching profile for userId:', userId);
 
     const [rows] = await pool.query(
-      `SELECT u.email, u.role, p.name, p.age, p.gender, p.fitness_goals, p.workout_types, p.availability, p.profile_image, p.about_me
+      `SELECT u.email, u.role, p.name, p.age, p.gender, p.fitness_goals, p.workout_types, p.availability, p.profile_image, p.about_me, go.gym_id
        FROM users u
        LEFT JOIN profiles p ON u.id = p.user_id
+       LEFT JOIN gym_owners go ON u.id = go.user_id
        WHERE u.id = ?`,
       [userId]
     );
@@ -67,6 +69,12 @@ exports.getProfile = async (req, res) => {
     }
 
     const userData = rows[0];
+    console.log('[UserController.getProfile] User data:', {
+      email: userData.email,
+      role: userData.role,
+      name: userData.name,
+      gymId: userData.gym_id
+    });
 
     const [matchRows] = await pool.query(
       'SELECT COUNT(DISTINCT id) AS match_count FROM chat_threads WHERE (user_1 = ? OR user_2 = ?)',
@@ -78,7 +86,7 @@ exports.getProfile = async (req, res) => {
       [userId, userId]
     );
 
-    res.json({
+    const response = {
       userId,
       email: userData.email,
       role: userData.role,
@@ -90,11 +98,15 @@ exports.getProfile = async (req, res) => {
       availability: userData.availability || '',
       profileImage: userData.profile_image || null,
       aboutMe: userData.about_me || '',
+      gymId: userData.gym_id || null,
       stats: {
         matches: matchRows[0].match_count || 0,
         activeThreads: activeRows[0].active_count || 0
       }
-    });
+    };
+    
+    console.log('[UserController.getProfile] Response gymId:', response.gymId);
+    res.json(response);
   } catch (error) {
     console.error('[UserController.getProfile]', error);
     res.status(500).json({ error: 'Failed to retrieve profile.' });

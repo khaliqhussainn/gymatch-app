@@ -77,3 +77,69 @@ exports.rejectFeatureRequest = async (req, res) => {
     res.status(500).json({ success: false, error: 'Failed to reject feature request' });
   }
 };
+
+/**
+ * Create feature request (gym owner or user)
+ */
+exports.createFeatureRequest = async (req, res) => {
+  try {
+    const { request_type, entity_id, reason } = req.body;
+    const requester_id = req.user.userId;
+
+    // Validate request_type
+    if (!['gym', 'user'].includes(request_type)) {
+      return res.status(400).json({ success: false, error: 'Invalid request type. Must be "gym" or "user"' });
+    }
+
+    // Check if there's already a pending request for this entity
+    const [existing] = await pool.query(
+      'SELECT * FROM feature_requests WHERE request_type = ? AND entity_id = ? AND status = ?',
+      [request_type, entity_id, 'pending']
+    );
+
+    if (existing.length > 0) {
+      return res.status(400).json({ success: false, error: 'A pending feature request already exists for this entity' });
+    }
+
+    // Create feature request
+    const [result] = await pool.query(
+      'INSERT INTO feature_requests (request_type, entity_id, requester_id, reason, status) VALUES (?, ?, ?, ?, ?)',
+      [request_type, entity_id, requester_id, reason || null, 'pending']
+    );
+
+    res.json({ 
+      success: true, 
+      message: 'Feature request submitted successfully',
+      requestId: result.insertId 
+    });
+  } catch (error) {
+    console.error('Error creating feature request:', error);
+    res.status(500).json({ success: false, error: 'Failed to create feature request' });
+  }
+};
+
+/**
+ * Get feature requests for current user
+ */
+exports.getUserFeatureRequests = async (req, res) => {
+  try {
+    const requester_id = req.user.userId;
+
+    const [requests] = await pool.query(
+      `SELECT fr.id, fr.request_type, fr.entity_id, fr.status, fr.reason, fr.created_at,
+              CASE 
+                WHEN fr.request_type = 'gym' THEN (SELECT name FROM gyms WHERE id = fr.entity_id)
+                WHEN fr.request_type = 'user' THEN (SELECT name FROM profiles WHERE user_id = fr.entity_id)
+              END as entity_name
+       FROM feature_requests fr
+       WHERE fr.requester_id = ?
+       ORDER BY fr.created_at DESC`,
+      [requester_id]
+    );
+
+    res.json({ success: true, data: requests });
+  } catch (error) {
+    console.error('Error fetching user feature requests:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch feature requests' });
+  }
+};

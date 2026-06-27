@@ -450,7 +450,7 @@ exports.runMigrations = async (req, res) => {
     }
 
     // ── Migration 7: Add about_me column to profiles ─────────────────────
-    log('\n[7/11] Checking about_me column on profiles table...');
+    log('\n[7/12] Checking about_me column on profiles table...');
     try {
       await pool.query(`ALTER TABLE profiles ADD COLUMN about_me TEXT NULL AFTER availability`);
       log('  ✓ about_me column added to profiles.');
@@ -462,8 +462,89 @@ exports.runMigrations = async (req, res) => {
       }
     }
 
-    // ── Migration 8: Add google_place_id column to gyms ──────────────────
-    log('\n[8/11] Checking google_place_id column on gyms table...');
+    // ── Migration 8: Gym Owner Registration Tables ───────────────────────
+    log('\n[8/12] Setting up gym owner registration tables...');
+    try {
+      // Update users table to add gym_owner role
+      await pool.query(`ALTER TABLE users MODIFY COLUMN role ENUM('guest', 'user', 'admin', 'gym_owner') DEFAULT 'user'`);
+      log('  ✓ users table updated to support gym_owner role.');
+    } catch (roleErr) {
+      if (roleErr.errno === 1060 || (roleErr.message && roleErr.message.includes('Duplicate column'))) {
+        log('  ✓ gym_owner role already exists in users table, skipped.');
+      } else {
+        log(`  ⚠️ Could not update users role: ${roleErr.message}`);
+      }
+    }
+
+    try {
+      // Create gym_owners table
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS gym_owners (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          user_id INT NOT NULL UNIQUE,
+          gym_id INT NOT NULL,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+          FOREIGN KEY (gym_id) REFERENCES gyms(id) ON DELETE CASCADE
+        )
+      `);
+      log('  ✓ gym_owners table ready.');
+    } catch (gymOwnersErr) {
+      log(`  ⚠️ gym_owners table: ${gymOwnersErr.message}`);
+    }
+
+    try {
+      // Add owner_id column to gyms table
+      await pool.query(`ALTER TABLE gyms ADD COLUMN IF NOT EXISTS owner_id INT NULL AFTER id`);
+      log('  ✓ owner_id column added to gyms table.');
+    } catch (ownerIdErr) {
+      if (ownerIdErr.errno === 1060 || (ownerIdErr.message && ownerIdErr.message.includes('Duplicate column'))) {
+        log('  ✓ owner_id column already exists in gyms table, skipped.');
+      } else {
+        log(`  ⚠️ Could not add owner_id column: ${ownerIdErr.message}`);
+      }
+    }
+
+    try {
+      // Add foreign key constraint for owner_id
+      await pool.query(`ALTER TABLE gyms ADD CONSTRAINT fk_gym_owner FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE SET NULL`);
+      log('  ✓ fk_gym_owner constraint added to gyms table.');
+    } catch (fkErr) {
+      if (fkErr.errno === 1822 || fkErr.errno === 1061 || (fkErr.message && fkErr.message.includes('constraint'))) {
+        log('  ✓ fk_gym_owner constraint already exists, skipped.');
+      } else {
+        log(`  ⚠️ Could not add fk_gym_owner constraint: ${fkErr.message}`);
+      }
+    }
+
+    try {
+      // Add verification_status column to gyms table
+      await pool.query(`ALTER TABLE gyms ADD COLUMN IF NOT EXISTS verification_status ENUM('pending', 'verified', 'rejected') DEFAULT 'verified' AFTER is_featured`);
+      log('  ✓ verification_status column added to gyms table.');
+    } catch (verificationErr) {
+      if (verificationErr.errno === 1060 || (verificationErr.message && verificationErr.message.includes('Duplicate column'))) {
+        log('  ✓ verification_status column already exists in gyms table, skipped.');
+      } else {
+        log(`  ⚠️ Could not add verification_status column: ${verificationErr.message}`);
+      }
+    }
+
+    try {
+      // Add indexes for gym owner lookups
+      await pool.query(`CREATE INDEX IF NOT EXISTS idx_gym_owners_user_id ON gym_owners(user_id)`);
+      await pool.query(`CREATE INDEX IF NOT EXISTS idx_gym_owners_gym_id ON gym_owners(gym_id)`);
+      await pool.query(`CREATE INDEX IF NOT EXISTS idx_gyms_owner_id ON gyms(owner_id)`);
+      log('  ✓ gym owner indexes created.');
+    } catch (indexErr) {
+      if (indexErr.errno === 1061 || (indexErr.message && indexErr.message.includes('Duplicate key'))) {
+        log('  ✓ gym owner indexes already exist, skipped.');
+      } else {
+        log(`  ⚠️ Could not create gym owner indexes: ${indexErr.message}`);
+      }
+    }
+
+    // ── Migration 9: Add google_place_id column to gyms ──────────────────
+    log('\n[9/13] Checking google_place_id column on gyms table...');
     try {
       await pool.query(`ALTER TABLE gyms ADD COLUMN google_place_id VARCHAR(255) UNIQUE NULL AFTER is_featured`);
       log('  ✓ google_place_id column added to gyms.');
@@ -475,8 +556,8 @@ exports.runMigrations = async (req, res) => {
       }
     }
 
-    // ── Migration 9: Add apple_id column to users ───────────────────────
-    log('\n[9/11] Checking apple_id column on users table...');
+    // ── Migration 10: Add apple_id column to users ───────────────────────
+    log('\n[10/13] Checking apple_id column on users table...');
     try {
       await pool.query(`ALTER TABLE users ADD COLUMN apple_id VARCHAR(255) UNIQUE NULL AFTER google_id`);
       log('  ✓ apple_id column added to users.');
@@ -488,8 +569,8 @@ exports.runMigrations = async (req, res) => {
       }
     }
 
-    // ── Migration 10: Create gym_categories table ─────────────────────
-    log('\n[10/11] Checking gym_categories table...');
+    // ── Migration 11: Create gym_categories table ─────────────────────
+    log('\n[11/13] Checking gym_categories table...');
     try {
       await pool.query(`
         CREATE TABLE IF NOT EXISTS gym_categories (
@@ -506,7 +587,7 @@ exports.runMigrations = async (req, res) => {
     }
 
     // ── Seed gym categories ───────────────────────────────────────────
-    log('\n[11/12] Seeding gym categories...');
+    log('\n[12/13] Seeding gym categories...');
     try {
       const [existingCategories] = await pool.query('SELECT id FROM gym_categories');
       const existingIds = existingCategories.map(c => c.id);
@@ -536,8 +617,8 @@ exports.runMigrations = async (req, res) => {
       fail(`  ⚠️ Seeding gym categories failed: ${seedErr.message}`);
     }
 
-    // ── Migration 12: Add status column to users table ──────────────────
-    log('\n[12/13] Checking status column on users table...');
+    // ── Migration 13: Add status column to users table ──────────────────
+    log('\n[13/13] Checking status column on users table...');
     try {
       await pool.query(`ALTER TABLE users ADD COLUMN status ENUM('active', 'suspended') DEFAULT 'active' AFTER role`);
       log('  ✓ status column added to users.');

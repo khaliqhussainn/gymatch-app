@@ -172,6 +172,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               label: 'Edit Profile Info',
                               onTap: () => _showEditProfileBottomSheet(authProvider),
                             ),
+                            if (authProvider.role == 'gym_owner') ...[
+                              const Divider(color: Colors.white10, height: 1, indent: 56),
+                              _buildMenuTile(
+                                icon: Icons.business_rounded,
+                                label: 'Edit Gym Info',
+                                onTap: () => _showEditGymInfoBottomSheet(authProvider),
+                              ),
+                            ],
                             const Divider(color: Colors.white10, height: 1, indent: 56),
                             _buildMenuTile(
                               icon: Icons.location_on_outlined,
@@ -179,6 +187,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               onTap: () => _showLocationPreferencesBottomSheet(
                                 Provider.of<GymProvider>(context, listen: false),
                               ),
+                            ),
+                            const Divider(color: Colors.white10, height: 1, indent: 56),
+                            _buildMenuTile(
+                              icon: Icons.star_rounded,
+                              label: 'Request to Feature',
+                              onTap: () => _showFeatureRequestScreen(authProvider),
                             ),
                             const Divider(color: Colors.white10, height: 1, indent: 56),
                             _buildMenuTile(
@@ -862,6 +876,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
       ),
     );
+  }
+
+  void _showEditGymInfoBottomSheet(AuthProvider authProvider) {
+    final gymId = authProvider.userProfile?['gymId'] as int?;
+    if (gymId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No gym associated with your account'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+      return;
+    }
+    context.push(AppRoutes.editGymInfo, extra: gymId);
+  }
+
+  void _showFeatureRequestScreen(AuthProvider authProvider) {
+    final gymId = authProvider.userProfile?['gymId'] as int?;
+    final gymName = authProvider.userProfile?['gymName'] as String?;
+    context.push(AppRoutes.gymFeatureRequest, extra: {
+      'gymId': gymId,
+      'gymName': gymName ?? 'Gym',
+    });
   }
 
   void _showLocationPreferencesBottomSheet(GymProvider gymProvider) {

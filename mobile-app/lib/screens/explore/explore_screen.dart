@@ -395,6 +395,10 @@ class _ExploreScreenState extends State<ExploreScreen> {
       'assets/images/gym-pin.png',
       height: 54,
     );
+    final featuredGymIcon = await _getAssetMarker(
+      'assets/images/feature-gym-pin.png',
+      height: 58,
+    );
     final partnerIcon = await _getAssetMarker(
       'assets/images/user-pin.png',
       height: 52,
@@ -409,11 +413,15 @@ class _ExploreScreenState extends State<ExploreScreen> {
     for (final gym in gymProvider.nearbyGyms) {
       final markerId = MarkerId('gym_${gym.id}');
       final isSelected = _selectedPin?.id == gym.id;
+      // Use featured gym icon for featured gyms
+      final gymMarkerIcon = gym.isFeatured && !isSelected
+          ? featuredGymIcon
+          : (isSelected ? selectedGymIcon : gymIcon);
       newMarkers[markerId] = Marker(
         markerId: markerId,
         position: LatLng(gym.latitude, gym.longitude),
-        icon: isSelected ? selectedGymIcon : gymIcon,
-        zIndexInt: isSelected ? 2 : 1,
+        icon: gymMarkerIcon,
+        zIndexInt: isSelected ? 2 : (gym.isFeatured ? 3 : 1),
         onTap: () {
           setState(() {
             _selectedPin = gym;

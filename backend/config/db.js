@@ -3,6 +3,15 @@ const path = require('path');
 const envPath = path.join(__dirname, '..', '.env');
 require('dotenv').config({ path: envPath, override: true });
 
+const appleClientIds = (
+  process.env.APPLE_CLIENT_IDS ||
+  process.env.APPLE_CLIENT_ID ||
+  'com.gymatch.app'
+)
+  .split(',')
+  .map((clientId) => clientId.trim())
+  .filter(Boolean);
+
 module.exports = {
   host: process.env.DB_HOST || 'localhost',
   user: process.env.DB_USER || 'root',
@@ -12,6 +21,7 @@ module.exports = {
   jwtSecret: process.env.JWT_SECRET || 'your_strong_secret_here',
   googleClientId: process.env.GOOGLE_CLIENT_ID,
   googleClientSecret: process.env.GOOGLE_CLIENT_SECRET,
-  appleClientId: process.env.APPLE_CLIENT_ID || 'com.gymatch.app',
+  appleClientId: appleClientIds[0],
+  appleClientIds,
   googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY || 'AIzaSyAnat7KjNftq-ctwytsR317xVrs7BQ4OzA',
 };

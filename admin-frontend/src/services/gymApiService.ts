@@ -15,6 +15,8 @@ export interface Gym {
   category: string;
   is_featured: boolean;
   created_at: string;
+  owner_name?: string;
+  owner_email?: string;
   images?: { image_url: string; sort_order: number }[];
   amenities?: string[];
   membership_plans?: {

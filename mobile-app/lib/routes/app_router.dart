@@ -3,8 +3,12 @@ import '../screens/splash/splash_screen.dart';
 import '../screens/onboarding/onboarding_screen.dart';
 import '../screens/auth/login_screen.dart';
 import '../screens/auth/register_screen.dart';
+import '../screens/auth/gym_registration_screen.dart';
 import '../screens/auth/forgot_password_screen.dart';
 import '../screens/auth/reset_password_screen.dart';
+import '../screens/gym_owner/gym_dashboard_screen.dart';
+import '../screens/gym_owner/active_partners_screen.dart';
+import '../screens/gym_owner/feature_request_screen.dart';
 import '../screens/home/home_screen.dart';
 import '../screens/explore/explore_screen.dart';
 import '../screens/map/map_screen.dart';
@@ -16,6 +20,7 @@ import '../screens/home/gym_detail_screen.dart';
 import '../screens/home/search_screen.dart';
 import '../screens/profile/saved_gyms_screen.dart';
 import '../screens/partner/partner_profile_screen.dart';
+import '../screens/gym_owner/edit_gym_info_screen.dart';
 
 class AppRoutes {
   AppRoutes._();
@@ -24,6 +29,7 @@ class AppRoutes {
   static const String onboarding = '/onboarding';
   static const String login = '/login';
   static const String register = '/register';
+  static const String gymRegistration = '/gym-registration';
   static const String forgotPassword = '/forgot-password';
   static const String resetPassword = '/reset-password';
   static const String main = '/main';
@@ -37,6 +43,10 @@ class AppRoutes {
   static const String search = '/search';
   static const String savedGyms = '/saved-gyms';
   static const String partnerProfile = '/partner-profile';
+  static const String gymDashboard = '/gym-dashboard';
+  static const String gymPartners = '/gym-partners';
+  static const String gymFeatureRequest = '/gym-feature-request';
+  static const String editGymInfo = '/edit-gym-info';
 }
 
 final GoRouter appRouter = GoRouter(
@@ -69,6 +79,10 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: AppRoutes.register,
       builder: (context, state) => const RegisterScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.gymRegistration,
+      builder: (context, state) => const GymRegistrationScreen(),
     ),
     GoRoute(
       path: AppRoutes.forgotPassword,
@@ -111,6 +125,34 @@ final GoRouter appRouter = GoRouter(
           gymId: args['gymId'] as int,
           gymName: args['gymName'] as String? ?? '',
         );
+      },
+    ),
+    GoRoute(
+      path: AppRoutes.gymDashboard,
+      builder: (context, state) => const GymDashboardScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.gymPartners,
+      builder: (context, state) {
+        final gymId = state.extra as int?;
+        return ActivePartnersScreen(gymId: gymId ?? 0);
+      },
+    ),
+    GoRoute(
+      path: AppRoutes.gymFeatureRequest,
+      builder: (context, state) {
+        final args = state.extra as Map<String, dynamic>?;
+        return FeatureRequestScreen(
+          gymId: args?['gymId'] as int? ?? 0,
+          gymName: args?['gymName'] as String? ?? 'Gym',
+        );
+      },
+    ),
+    GoRoute(
+      path: AppRoutes.editGymInfo,
+      builder: (context, state) {
+        final gymId = state.extra as int?;
+        return EditGymInfoScreen(gymId: gymId ?? 0);
       },
     ),
     ShellRoute(

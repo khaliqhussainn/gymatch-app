@@ -21,12 +21,14 @@ const PORT = process.env.PORT || 5000;
 // Middleware
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
+app.use('/uploads', express.static('uploads'));
 
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/admin/auth', adminAuthRoutes);
 app.use('/api/admin/categories', adminCategoryRoutes);
 app.use('/api/admin/users', adminUserRoutes);
+app.use('/api/feature-requests', adminFeatureRequestRoutes);
 app.use('/api/admin/feature-requests', adminFeatureRequestRoutes);
 app.use('/api/admin/gyms', adminGymRoutes);
 app.use('/api/admin/dashboard', adminDashboardRoutes);

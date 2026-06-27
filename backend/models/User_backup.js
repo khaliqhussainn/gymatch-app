@@ -131,14 +131,6 @@ class User {
       );
     }
   }
-
-  static async createGymOwner({ email, password, name }) {
-    const [result] = await pool.query(
-      'INSERT INTO users (email, password, role, name) VALUES (?, ?, ?, ?)',
-      [email, password, 'gym_owner', name]
-    );
-    return { id: result.insertId, email, role: 'gym_owner', name };
-  }
 }
 
 module.exports = User;

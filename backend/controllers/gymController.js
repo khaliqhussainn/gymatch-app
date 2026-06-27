@@ -1072,3 +1072,160 @@ exports.getPlacesNearby = async (req, res) => {
     });
   }
 };
+
+/**
+ * GET /api/gyms/:id/partners (gym owner only)
+ * Get active partners at the gym owner's gym
+ */
+exports.getGymPartners = async (req, res) => {
+  try {
+    const gymId = parseInt(req.params.id, 10);
+    const userId = req.user.userId;
+
+    // Verify user is the gym owner
+    const GymOwner = require('../models/GymOwner');
+    const gymOwner = await GymOwner.findByUserId(userId);
+    
+    if (!gymOwner || gymOwner.gym_id !== gymId) {
+      return res.status(403).json({ error: 'You are not authorized to view partners for this gym.' });
+    }
+
+    const query = `
+      SELECT ap.*, p.name AS user_name, u.email
+      FROM active_partners ap
+      JOIN users u ON ap.user_id = u.id
+      LEFT JOIN profiles p ON ap.user_id = p.user_id
+      WHERE ap.gym_id = ?
+      ORDER BY ap.activated_at DESC
+    `;
+    const [rows] = await pool.query(query, [gymId]);
+    
+    const partners = rows.map(r => ({
+      userId: r.user_id,
+      gymId: r.gym_id,
+      status: r.status,
+      workoutType: r.workout_type || 'General',
+      experienceLevel: r.experience_level || 'Intermediate',
+      name: r.user_name || r.email.split('@')[0],
+      email: r.email,
+      activatedAt: r.activated_at
+    }));
+
+    res.json({ partners, count: partners.length });
+  } catch (error) {
+    console.error('[GymController.getGymPartners]', error);
+    res.status(500).json({ error: 'Failed to fetch gym partners.' });
+  }
+};
+
+/**
+ * PUT /api/gyms/:id (gym owner only)
+ * Update gym details
+ */
+exports.updateGymDetails = async (req, res) => {
+  try {
+    const gymId = parseInt(req.params.id, 10);
+    const userId = req.user.userId;
+    const { 
+      gymName,
+      gymSubName,
+      locationName,
+      nearLocation,
+      category,
+      contactPhone,
+      openHours,
+      images,
+      amenities,
+      latitude,
+      longitude 
+    } = req.body;
+
+    // Verify user is the gym owner
+    const GymOwner = require('../models/GymOwner');
+    const gymOwner = await GymOwner.findByUserId(userId);
+    
+    if (!gymOwner || gymOwner.gym_id !== gymId) {
+      return res.status(403).json({ error: 'You are not authorized to update this gym.' });
+    }
+
+    // Update gym details
+    const updates = [];
+    const params = [];
+
+    if (gymName) {
+      updates.push('name = ?');
+      params.push(gymName);
+    }
+    if (gymSubName !== undefined) {
+      updates.push('sub_name = ?');
+      params.push(gymSubName || null);
+    }
+    if (locationName) {
+      updates.push('location_name = ?');
+      params.push(locationName);
+    }
+    if (nearLocation !== undefined) {
+      updates.push('near_location = ?');
+      params.push(nearLocation || null);
+    }
+    if (category) {
+      updates.push('category = ?');
+      params.push(category);
+    }
+    if (contactPhone !== undefined) {
+      updates.push('contact_phone = ?');
+      params.push(contactPhone || null);
+    }
+    if (openHours) {
+      updates.push('open_hours = ?');
+      params.push(openHours);
+    }
+    if (latitude !== undefined && latitude !== null) {
+      updates.push('latitude = ?');
+      params.push(latitude);
+    }
+    if (longitude !== undefined && longitude !== null) {
+      updates.push('longitude = ?');
+      params.push(longitude);
+    }
+
+    if (updates.length > 0) {
+      params.push(gymId);
+      await pool.query(`UPDATE gyms SET ${updates.join(', ')} WHERE id = ?`, params);
+    }
+
+    // Update images if provided
+    if (images && Array.isArray(images)) {
+      await pool.query('DELETE FROM gym_images WHERE gym_id = ?', [gymId]);
+      for (let i = 0; i < images.length; i++) {
+        let imageUrl = images[i];
+        // If it's base64 without prefix, add it
+        if (imageUrl && (imageUrl.startsWith('/9j/') || imageUrl.startsWith('iVBORw'))) {
+          const prefix = imageUrl.startsWith('/9j/') ? 'data:image/jpeg;base64,' : 'data:image/png;base64,';
+          imageUrl = prefix + imageUrl;
+        }
+        await pool.query(
+          'INSERT INTO gym_images (gym_id, image_url, sort_order) VALUES (?, ?, ?)',
+          [gymId, imageUrl, i]
+        );
+      }
+      console.log('[GymController.updateGymDetails] Updated', images.length, 'images for gym', gymId);
+    }
+
+    // Update amenities if provided
+    if (amenities && Array.isArray(amenities)) {
+      await pool.query('DELETE FROM gym_amenities WHERE gym_id = ?', [gymId]);
+      for (const amenity of amenities) {
+        await pool.query(
+          'INSERT INTO gym_amenities (gym_id, name) VALUES (?, ?)',
+          [gymId, amenity]
+        );
+      }
+    }
+
+    res.json({ message: 'Gym details updated successfully' });
+  } catch (error) {
+    console.error('[GymController.updateGymDetails]', error);
+    res.status(500).json({ error: 'Failed to update gym details.' });
+  }
+};

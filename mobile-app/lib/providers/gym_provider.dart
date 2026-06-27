@@ -506,4 +506,143 @@ class GymProvider extends ChangeNotifier {
       return null;
     }
   }
+
+  // Gym Owner specific methods
+
+  /// Fetch active partners at the gym owner's gym
+  Future<List<Map<String, dynamic>>> fetchGymPartners(int gymId) async {
+    try {
+      final response = await _api.dio.get('/gyms/$gymId/partners');
+      final List<dynamic> data = response.data['partners'] ?? [];
+      _activePartners = data.map((item) => Map<String, dynamic>.from(item)).toList();
+      notifyListeners();
+      return _activePartners;
+    } on DioException catch (e) {
+      _errorMessage = e.error is NetworkException
+          ? e.error.toString()
+          : 'Failed to load gym partners.';
+      notifyListeners();
+      return [];
+    } catch (e) {
+      _errorMessage = 'An unexpected error occurred.';
+      notifyListeners();
+      return [];
+    }
+  }
+
+  /// Update gym details (gym owner only)
+  Future<bool> updateGymDetails({
+    required int gymId,
+    String? gymName,
+    String? gymSubName,
+    String? locationName,
+    String? nearLocation,
+    String? category,
+    String? contactPhone,
+    String? openHours,
+    List<String>? images,
+    List<String>? amenities,
+    double? latitude,
+    double? longitude,
+  }) async {
+    try {
+      await _api.dio.put('/gyms/$gymId', data: {
+        if (gymName != null) 'gymName': gymName,
+        if (gymSubName != null) 'gymSubName': gymSubName,
+        if (locationName != null) 'locationName': locationName,
+        if (nearLocation != null) 'nearLocation': nearLocation,
+        if (category != null) 'category': category,
+        if (contactPhone != null) 'contactPhone': contactPhone,
+        if (openHours != null) 'openHours': openHours,
+        if (images != null) 'images': images,
+        if (amenities != null) 'amenities': amenities,
+        if (latitude != null) 'latitude': latitude,
+        if (longitude != null) 'longitude': longitude,
+      });
+      
+      // Refresh gym details
+      await fetchGymDetail(gymId);
+      return true;
+    } on DioException catch (e) {
+      _errorMessage = e.error is NetworkException
+          ? e.error.toString()
+          : 'Failed to update gym details.';
+      notifyListeners();
+      return false;
+    } catch (e) {
+      _errorMessage = 'An unexpected error occurred.';
+      notifyListeners();
+      return false;
+    }
+  }
+
+  /// Parse Google Maps URL to extract coordinates
+  Future<Map<String, dynamic>?> parseLocationUrl(String url) async {
+    try {
+      final response = await _api.dio.post('/auth/parse-location', data: {'location': url});
+      if (response.statusCode == 200 && response.data != null) {
+        return response.data;
+      }
+    } on DioException catch (e) {
+      if (e.error is NetworkException) {
+        _errorMessage = e.error.toString();
+      } else if (e.response != null) {
+        final data = e.response?.data;
+        if (data is Map && data.containsKey('error')) {
+          _errorMessage = data['error'];
+        } else {
+          _errorMessage = 'Failed to parse location URL.';
+        }
+      } else {
+        _errorMessage = 'Failed to parse location URL.';
+      }
+      notifyListeners();
+    }
+    return null;
+  }
+
+  /// Create a feature request for gym or user
+  Future<bool> createFeatureRequest({
+    required String requestType,
+    required int entityId,
+    String? reason,
+  }) async {
+    try {
+      await _api.dio.post('/feature-requests', data: {
+        'request_type': requestType,
+        'entity_id': entityId,
+        'reason': reason,
+      });
+      return true;
+    } on DioException catch (e) {
+      _errorMessage = e.error is NetworkException
+          ? e.error.toString()
+          : 'Failed to create feature request.';
+      notifyListeners();
+      return false;
+    } catch (e) {
+      _errorMessage = 'An unexpected error occurred.';
+      notifyListeners();
+      return false;
+    }
+  }
+
+  /// Fetch user's feature requests
+  Future<List<Map<String, dynamic>>> fetchUserFeatureRequests() async {
+    try {
+      final response = await _api.dio.get('/feature-requests/my-requests');
+      final List<dynamic> data = response.data['data'] ?? [];
+      return data.map((item) => Map<String, dynamic>.from(item)).toList();
+    } on DioException catch (e) {
+      _errorMessage = e.error is NetworkException
+          ? e.error.toString()
+          : 'Failed to load feature requests.';
+      notifyListeners();
+      return [];
+    } catch (e) {
+      _errorMessage = 'An unexpected error occurred.';
+      notifyListeners();
+      return [];
+    }
+  }
 }
