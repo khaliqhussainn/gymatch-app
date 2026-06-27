@@ -893,12 +893,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _showFeatureRequestScreen(AuthProvider authProvider) {
+    final role = authProvider.role;
     final gymId = authProvider.userProfile?['gymId'] as int?;
     final gymName = authProvider.userProfile?['gymName'] as String?;
-    context.push(AppRoutes.gymFeatureRequest, extra: {
-      'gymId': gymId,
-      'gymName': gymName ?? 'Gym',
-    });
+    final userName = authProvider.userProfile?['name'] as String?;
+    
+    // For gym owners, use gym feature request; for users/trainers, use user feature request
+    if (role == 'gym_owner' && gymId != null) {
+      context.push(AppRoutes.gymFeatureRequest, extra: {
+        'gymId': gymId,
+        'gymName': gymName ?? 'Gym',
+        'requestType': 'gym',
+      });
+    } else {
+      // For users and trainers
+      context.push(AppRoutes.gymFeatureRequest, extra: {
+        'gymId': authProvider.userId ?? 0,
+        'gymName': userName ?? 'Profile',
+        'requestType': 'user',
+      });
+    }
   }
 
   void _showLocationPreferencesBottomSheet(GymProvider gymProvider) {

@@ -145,6 +145,7 @@ final GoRouter appRouter = GoRouter(
         return FeatureRequestScreen(
           gymId: args?['gymId'] as int? ?? 0,
           gymName: args?['gymName'] as String? ?? 'Gym',
+          requestType: args?['requestType'] as String?,
         );
       },
     ),

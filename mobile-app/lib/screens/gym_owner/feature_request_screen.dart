@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/gym_provider.dart';
+import '../../providers/auth_provider.dart';
 import '../../config/app_colors.dart';
 
 class FeatureRequestScreen extends StatefulWidget {
   final int gymId;
   final String gymName;
+  final String? requestType; // 'gym' or 'user'
 
   const FeatureRequestScreen({
     super.key,
     required this.gymId,
     required this.gymName,
+    this.requestType = 'gym',
   });
 
   @override
@@ -107,7 +110,7 @@ class _FeatureRequestScreenState extends State<FeatureRequestScreen> {
     try {
       final gymProvider = context.read<GymProvider>();
       final success = await gymProvider.createFeatureRequest(
-        requestType: 'gym',
+        requestType: widget.requestType ?? 'gym',
         entityId: widget.gymId,
         reason: _reasonController.text.trim(),
       );
@@ -136,11 +139,18 @@ class _FeatureRequestScreenState extends State<FeatureRequestScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isGymRequest = widget.requestType == 'gym';
+    final authProvider = context.watch<AuthProvider>();
+    final role = authProvider.role;
+    
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
         backgroundColor: Colors.black,
-        title: const Text('Request Featured Status', style: TextStyle(color: Colors.white)),
+        title: Text(
+          isGymRequest ? 'Request Featured Status' : 'Request Featured Profile',
+          style: const TextStyle(color: Colors.white),
+        ),
         iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: SingleChildScrollView(
@@ -148,7 +158,7 @@ class _FeatureRequestScreenState extends State<FeatureRequestScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Gym Info
+            // Entity Info
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -158,16 +168,17 @@ class _FeatureRequestScreenState extends State<FeatureRequestScreen> {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.business, color: AppColors.primary),
+                  Icon(
+                    isGymRequest ? Icons.business : Icons.person,
+                    color: AppColors.primary,
+                  ),
                   const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      widget.gymName,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
+                  Text(
+                    isGymRequest ? widget.gymName : 'User / Trainer',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
                 ],
@@ -176,9 +187,11 @@ class _FeatureRequestScreenState extends State<FeatureRequestScreen> {
             const SizedBox(height: 24),
 
             // Request Form
-            const Text(
-              'Why should your gym be featured?',
-              style: TextStyle(
+            Text(
+              isGymRequest 
+                  ? 'Why should your gym be featured?'
+                  : 'Why should you be featured?',
+              style: const TextStyle(
                 color: Colors.white,
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -186,7 +199,9 @@ class _FeatureRequestScreenState extends State<FeatureRequestScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Tell us what makes your gym special and why it deserves to be featured on GYMatch.',
+              isGymRequest
+                  ? 'Tell us what makes your gym special and why it deserves to be featured on GYMatch.'
+                  : 'Tell us about your fitness journey, achievements, and why you deserve to be featured on GYMatch.',
               style: TextStyle(
                 color: Colors.white.withOpacity(0.6),
                 fontSize: 14,
@@ -200,7 +215,9 @@ class _FeatureRequestScreenState extends State<FeatureRequestScreen> {
               maxLength: 2000,
               style: const TextStyle(color: Colors.white),
               decoration: InputDecoration(
-                hintText: 'e.g., We have state-of-the-art equipment, expert trainers, and a supportive community...',
+                hintText: isGymRequest
+                    ? 'e.g., We have state-of-the-art equipment, expert trainers, and a supportive community...'
+                    : 'e.g., I have transformed my health through consistent training, completed multiple fitness challenges, and love motivating others...',
                 hintStyle: TextStyle(color: Colors.white.withOpacity(0.4)),
                 filled: true,
                 fillColor: Colors.white.withOpacity(0.05),
@@ -381,6 +398,7 @@ class _FeatureRequestScreenState extends State<FeatureRequestScreen> {
 
   Widget _buildRequestCard(Map<String, dynamic> request) {
     final status = request['status'] ?? 'pending';
+    final isGymRequest = widget.requestType == 'gym';
     Color statusColor;
     IconData statusIcon;
 
@@ -413,7 +431,7 @@ class _FeatureRequestScreenState extends State<FeatureRequestScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                request['entity_name'] ?? 'Gym',
+                request['entity_name'] ?? (isGymRequest ? 'Gym' : 'Profile'),
                 style: const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,

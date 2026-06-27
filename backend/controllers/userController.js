@@ -350,7 +350,8 @@ exports.getNearbyPartners = async (req, res) => {
               p.workout_types   AS workoutTypes,
               p.availability,
               p.profile_image   AS profileImage,
-              p.about_me        AS aboutMe
+              p.about_me        AS aboutMe,
+              p.is_featured     AS isFeatured
        FROM users u
        LEFT JOIN profiles p ON u.id = p.user_id
        WHERE u.role != 'admin'
@@ -370,6 +371,7 @@ exports.getNearbyPartners = async (req, res) => {
       availability: p.availability || '',
       profileImage: p.profileImage || null,
       aboutMe: p.aboutMe || '',
+      isFeatured: p.isFeatured === 1 || p.isFeatured === true,
       gymId: null,
       gymName: '',
     }));

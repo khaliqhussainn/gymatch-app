@@ -614,6 +614,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final profileImgB64 = partner['profileImage'] as String?;
     final existingThreadId = partner['existingThreadId'] as int?;
     final isConnected = existingThreadId != null;
+    final isFeatured  = partner['isFeatured'] == true;
 
     // Use full workoutTypes from profile, fall back to active-partner workoutType
     final rawWorkout  = (partner['workoutTypes'] as String?)?.isNotEmpty == true
@@ -633,9 +634,12 @@ class _HomeScreenState extends State<HomeScreen> {
         border: Border.all(
           color: isConnected
               ? Colors.redAccent.withOpacity(0.4)
-              : const Color(0xFF1E1E1E),
-          width: isConnected ? 1.5 : 1,
+              : (isFeatured ? AppColors.primary.withOpacity(0.5) : const Color(0xFF1E1E1E)),
+          width: isConnected ? 1.5 : (isFeatured ? 1.5 : 1),
         ),
+        boxShadow: isFeatured
+            ? [BoxShadow(color: AppColors.primary.withOpacity(0.12), blurRadius: 16, spreadRadius: 2)]
+            : null,
       ),
       padding: const EdgeInsets.all(14),
       child: Row(
@@ -684,6 +688,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   spacing: 6,
                   runSpacing: 4,
                   children: [
+                    if (isFeatured)
+                      const FeaturedBadge(fontSize: 10, padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3)),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
