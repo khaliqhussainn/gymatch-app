@@ -393,20 +393,20 @@ class _ExploreScreenState extends State<ExploreScreen> {
 
     final gymIcon = await _getAssetMarker(
       'assets/images/gym-pin.png',
-      height: 54,
+      height: 70,
     );
     final featuredGymIcon = await _getAssetMarker(
       'assets/images/feature-gym-pin.png',
-      height: 58,
+      height: 75,
     );
     final partnerIcon = await _getAssetMarker(
       'assets/images/user-pin.png',
-      height: 52,
+      height: 60,
     );
     final selectedGymIcon = gymIcon;
     final userIcon = await _getAssetMarker(
       'assets/images/user-pin.png',
-      height: 50,
+      height: 55,
     );
 
     // 1. Real gyms from Google Places (via backend sync)
@@ -437,15 +437,32 @@ class _ExploreScreenState extends State<ExploreScreen> {
       );
     }
 
-    // 2. Active workout partner pins (near gym, slight random offset)
-    final rand = math.Random(42);
-    for (final gym in gymProvider.nearbyGyms) {
-      if (gym.activePartnersCount <= 0) continue;
-      final count = math.min(gym.activePartnersCount, 3);
-      for (int i = 0; i < count; i++) {
+    // 2. Active workout partner pins using location-based API
+    try {
+      final api = ApiClient();
+      final resp = await api.dio.get('/users/nearby', queryParameters: {
+        'lat': gymProvider.userLat,
+        'lng': gymProvider.userLng,
+        'radius': gymProvider.radius,
+      });
+      
+      final List<dynamic> partnersList = resp.data['partners'] ?? [];
+      final rand = math.Random(42);
+      
+      // Limit to 15 partner pins to avoid clutter
+      for (int i = 0; i < math.min(partnersList.length, 15); i++) {
+        final partner = partnersList[i];
+        final gymId = partner['gymId'] as int?;
+        final gym = gymProvider.nearbyGyms.cast<GymModel?>().firstWhere(
+          (g) => g?.id == gymId,
+          orElse: () => null,
+        );
+        
+        if (gym == null) continue;
+        
         final latOffset = (rand.nextDouble() - 0.5) * 0.003;
         final lngOffset = (rand.nextDouble() - 0.5) * 0.003;
-        final markerId = MarkerId('partner_${gym.id}_$i');
+        final markerId = MarkerId('partner_${i}');
         newMarkers[markerId] = Marker(
           markerId: markerId,
           position: LatLng(gym.latitude + latOffset, gym.longitude + lngOffset),
@@ -463,51 +480,96 @@ class _ExploreScreenState extends State<ExploreScreen> {
               _partnerCardLoading = true;
             });
             try {
-              // Use the pre-captured field (avoids BuildContext-across-async-gap)
-              final gp = _gymProvider;
-              if (gp == null) return;
-              final partners = await gp.fetchActivePartners(gym.id);
               if (!mounted) return;
-              final idx = i < partners.length ? i : partners.length - 1;
-              final partner = idx >= 0 ? partners[idx] : null;
-              if (partner != null) {
-                Map<String, dynamic> enriched = {
-                  ...partner,
-                  'gymId': gym.id,
-                  'gymName': gym.name,
-                };
-                try {
-                  final uid = (partner['userId'] as num?)?.toInt();
-                  if (uid != null) {
-                    final resp =
-                        await ApiClient().dio.get('/users/$uid/profile');
-                    enriched = {
-                      ...enriched,
-                      ...Map<String, dynamic>.from(resp.data),
-                      'gymId': gym.id,
-                      'gymName': gym.name,
-                      'workoutType': partner['workoutType'] ?? '',
-                    };
-                  }
-                } catch (_) {}
-                if (mounted) {
-                  setState(() {
-                    _selectedPartner = enriched;
-                    _selectedPartnerGym = gym;
-                    _partnerCardLoading = false;
-                  });
-                }
-              } else {
-                if (mounted) {
-                  setState(() => _partnerCardLoading = false);
-                  context.push(AppRoutes.gymDetail, extra: gym.id);
-                }
+              Map<String, dynamic> enriched = {
+                ...Map<String, dynamic>.from(partner),
+                'gymId': gym.id,
+                'gymName': gym.name,
+              };
+              if (mounted) {
+                setState(() {
+                  _selectedPartner = enriched;
+                  _selectedPartnerGym = gym;
+                  _partnerCardLoading = false;
+                });
               }
             } catch (_) {
               if (mounted) setState(() => _partnerCardLoading = false);
             }
           },
         );
+      }
+    } catch (_) {
+      // If location-based partners fail, fall back to gym-based display
+      final rand = math.Random(42);
+      for (final gym in gymProvider.nearbyGyms) {
+        if (gym.activePartnersCount <= 0) continue;
+        final count = math.min(gym.activePartnersCount, 3);
+        for (int i = 0; i < count; i++) {
+          final latOffset = (rand.nextDouble() - 0.5) * 0.003;
+          final lngOffset = (rand.nextDouble() - 0.5) * 0.003;
+          final markerId = MarkerId('partner_${gym.id}_$i');
+          newMarkers[markerId] = Marker(
+            markerId: markerId,
+            position: LatLng(gym.latitude + latOffset, gym.longitude + lngOffset),
+            icon: partnerIcon,
+            onTap: () async {
+              if (authProvider.isGuest) {
+                _showUnlockCommunityModal();
+                return;
+              }
+              setState(() {
+                _selectedPin = null;
+                _showMapPopup = false;
+                _selectedPartner = null;
+                _selectedPartnerGym = null;
+                _partnerCardLoading = true;
+              });
+              try {
+                final gp = _gymProvider;
+                if (gp == null) return;
+                final partners = await gp.fetchActivePartners(gym.id);
+                if (!mounted) return;
+                final idx = i < partners.length ? i : partners.length - 1;
+                final partner = idx >= 0 ? partners[idx] : null;
+                if (partner != null) {
+                  Map<String, dynamic> enriched = {
+                    ...partner,
+                    'gymId': gym.id,
+                    'gymName': gym.name,
+                  };
+                  try {
+                    final uid = (partner['userId'] as num?)?.toInt();
+                    if (uid != null) {
+                      final resp = await ApiClient().dio.get('/users/$uid/profile');
+                      enriched = {
+                        ...enriched,
+                        ...Map<String, dynamic>.from(resp.data),
+                        'gymId': gym.id,
+                        'gymName': gym.name,
+                        'workoutType': partner['workoutType'] ?? '',
+                      };
+                    }
+                  } catch (_) {}
+                  if (mounted) {
+                    setState(() {
+                      _selectedPartner = enriched;
+                      _selectedPartnerGym = gym;
+                      _partnerCardLoading = false;
+                    });
+                  }
+                } else {
+                  if (mounted) {
+                    setState(() => _partnerCardLoading = false);
+                    context.push(AppRoutes.gymDetail, extra: gym.id);
+                  }
+                }
+              } catch (_) {
+                if (mounted) setState(() => _partnerCardLoading = false);
+              }
+            },
+          );
+        }
       }
     }
 
@@ -1806,13 +1868,6 @@ class _ExploreScreenState extends State<ExploreScreen> {
                         decoration: BoxDecoration(
                           color: AppColors.primary,
                           shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColors.primary.withValues(alpha: 0.45),
-                              blurRadius: 14,
-                              spreadRadius: 2,
-                            )
-                          ],
                         ),
                         child: Center(
                           child: _isLocating

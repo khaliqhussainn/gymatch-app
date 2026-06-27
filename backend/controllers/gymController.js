@@ -575,8 +575,8 @@ exports.getNearby = async (req, res) => {
       }
       if (search && search.trim()) {
         const term = search.trim().toLowerCase();
-        filteredGyms = filteredGyms.filter(g => 
-          g.name.toLowerCase().includes(term) || 
+        filteredGyms = filteredGyms.filter(g =>
+          g.name.toLowerCase().includes(term) ||
           g.location_name.toLowerCase().includes(term)
         );
       }
@@ -589,18 +589,75 @@ exports.getNearby = async (req, res) => {
         return a.distance_km - b.distance_km;
       });
 
+      // Also fetch manually registered gyms (without google_place_id) from database
+      const manualGyms = await Gym.findNearby({
+        lat: parsedLat,
+        lng: parsedLng,
+        radiusKm: parseFloat(radius),
+        search,
+        category,
+        featuredOnly: featured === 'true',
+      });
+
+      // Filter to only include gyms without google_place_id (manually registered)
+      const manuallyRegisteredGyms = manualGyms.filter(gym => !gym.google_place_id);
+
+      // Enrich manually registered gyms with user state
+      for (const gym of manuallyRegisteredGyms) {
+        let isSaved = false;
+        let isActivePartner = false;
+        if (currentUserId) {
+          const [savedCheck] = await pool.query(
+            'SELECT 1 FROM saved_gyms WHERE user_id = ? AND gym_id = ?',
+            [currentUserId, gym.id]
+          );
+          isSaved = savedCheck.length > 0;
+
+          const [activeCheck] = await pool.query(
+            'SELECT 1 FROM active_partners WHERE user_id = ? AND gym_id = ?',
+            [currentUserId, gym.id]
+          );
+          isActivePartner = activeCheck.length > 0;
+        }
+
+        // Calculate distance for manually registered gyms
+        const R = 6371; // km
+        const dLat = (gym.latitude - parsedLat) * Math.PI / 180;
+        const dLon = (gym.longitude - parsedLng) * Math.PI / 180;
+        const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                  Math.cos(parsedLat * Math.PI / 180) * Math.cos(gym.latitude * Math.PI / 180) *
+                  Math.sin(dLon/2) * Math.sin(dLon/2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        const distanceKm = R * c;
+
+        filteredGyms.push({
+          ...gym,
+          distance_km: distanceKm,
+          is_saved: isSaved,
+          is_active_partner: isActivePartner
+        });
+      }
+
+      // Re-sort after adding manually registered gyms
+      filteredGyms.sort((a, b) => {
+        if (b.is_featured !== a.is_featured) {
+          return b.is_featured - a.is_featured;
+        }
+        return a.distance_km - b.distance_km;
+      });
+
       return res.json({ gyms: filteredGyms, count: filteredGyms.length });
     }
 
     // FALLBACK: If Google Places API fails or isn't configured, query local DB gyms
-    const gyms = (await Gym.findNearby({
+    const gyms = await Gym.findNearby({
       lat: parsedLat,
       lng: parsedLng,
       radiusKm: parseFloat(radius),
       search,
       category,
       featuredOnly: featured === 'true',
-    })).filter((gym) => gym.google_place_id);
+    });
 
     // Enrich local fallback gyms with user state (is_saved, is_active_partner)
     const currentUserId = req.user ? req.user.userId : null;

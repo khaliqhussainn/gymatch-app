@@ -1,4 +1,5 @@
 import 'dart:ui';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
@@ -344,6 +345,27 @@ class _GymDetailScreenState extends State<GymDetailScreen> {
   }
 
   Widget _buildGymImage(String imageUrl) {
+    // Check if it's a base64 data URI
+    if (imageUrl.startsWith('data:image')) {
+      try {
+        final base64String = imageUrl.split(',').last;
+        final imageBytes = base64Decode(base64String);
+        return Image.memory(
+          imageBytes,
+          fit: BoxFit.cover,
+          width: double.infinity,
+          errorBuilder: (context, error, stackTrace) {
+            debugPrint('[GymDetail] base64 image failed: $error');
+            return _buildImageFallback();
+          },
+        );
+      } catch (e) {
+        debugPrint('[GymDetail] base64 decode failed: $e');
+        return _buildImageFallback();
+      }
+    }
+
+    // Network URL
     return Image.network(
       imageUrl,
       headers: const {
@@ -980,11 +1002,19 @@ class _GymDetailScreenState extends State<GymDetailScreen> {
   }
 
   List<String> _formatHoursLines(String openHours) {
-    return openHours
-        .split(RegExp(r'\s+\|\s+'))
-        .map((line) => line.trim())
-        .where((line) => line.isNotEmpty)
-        .toList();
+    if (openHours.isEmpty) return [];
+
+    // Handle both pipe-separated format (Google Places) and simple time range (manual entry)
+    if (openHours.contains('|')) {
+      return openHours
+          .split(RegExp(r'\s+\|\s+'))
+          .map((line) => line.trim())
+          .where((line) => line.isNotEmpty)
+          .toList();
+    } else {
+      // Simple time range format like "6:00 am - 11:00 pm"
+      return [openHours.trim()];
+    }
   }
 
   Widget _buildImageFallback({bool isLoading = false}) {

@@ -323,3 +323,60 @@ exports.deleteAccount = async (req, res) => {
     res.status(500).json({ error: 'Failed to delete account. Please try again.' });
   }
 };
+
+// GET /api/users/nearby — find nearby users based on location
+exports.getNearbyPartners = async (req, res) => {
+  try {
+    const { lat, lng, radius = 15 } = req.query;
+    const currentUserId = req.user ? req.user.userId : null;
+
+    if (!lat || !lng) {
+      return res.status(400).json({ error: 'Location coordinates (lat, lng) are required.' });
+    }
+
+    const parsedLat = parseFloat(lat);
+    const parsedLng = parseFloat(lng);
+    const radiusKm = parseFloat(radius) || 15;
+
+    if (isNaN(parsedLat) || isNaN(parsedLng)) {
+      return res.status(400).json({ error: 'Invalid coordinates provided.' });
+    }
+
+    // Find users within the radius (using users table instead of active_partners)
+    const [partners] = await pool.query(
+      `SELECT u.id AS userId, u.email,
+              p.name, p.age, p.gender,
+              p.fitness_goals   AS fitnessGoals,
+              p.workout_types   AS workoutTypes,
+              p.availability,
+              p.profile_image   AS profileImage,
+              p.about_me        AS aboutMe
+       FROM users u
+       LEFT JOIN profiles p ON u.id = p.user_id
+       WHERE u.role != 'admin'
+         AND (? IS NULL OR u.id != ?)
+       ORDER BY p.name ASC
+       LIMIT 50`,
+      [currentUserId, currentUserId]
+    );
+
+    const enrichedPartners = partners.map(p => ({
+      userId: p.userId,
+      name: p.name || p.email.split('@')[0],
+      email: p.email,
+      fitnessGoals: p.fitnessGoals || '',
+      workoutTypes: p.workoutTypes || '',
+      workoutType: p.workoutTypes || '',
+      availability: p.availability || '',
+      profileImage: p.profileImage || null,
+      aboutMe: p.aboutMe || '',
+      gymId: null,
+      gymName: '',
+    }));
+
+    res.json({ partners: enrichedPartners, count: enrichedPartners.length });
+  } catch (error) {
+    console.error('[UserController.getNearbyPartners]', error);
+    res.status(500).json({ error: 'Failed to fetch nearby partners.' });
+  }
+};

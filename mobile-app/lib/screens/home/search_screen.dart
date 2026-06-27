@@ -667,13 +667,7 @@ class _SearchScreenState extends State<SearchScreen> {
               borderRadius:
                   const BorderRadius.horizontal(left: Radius.circular(15)),
               child: gym.coverImage != null
-                  ? Image.network(
-                      gym.coverImage!,
-                      width: 80,
-                      height: 80,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => _thumbFallback(),
-                    )
+                  ? _buildGymImage(gym.coverImage!, width: 80, height: 80)
                   : _thumbFallback(),
             ),
             const SizedBox(width: 14),
@@ -904,6 +898,35 @@ class _SearchScreenState extends State<SearchScreen> {
         ],
       ),
     ).animate().fadeIn(duration: 350.ms);
+  }
+
+  Widget _buildGymImage(String imageUrl, {double width = 80, double height = 80}) {
+    // Check if it's a base64 data URI
+    if (imageUrl.startsWith('data:image')) {
+      try {
+        final base64String = imageUrl.split(',').last;
+        final imageBytes = base64Decode(base64String);
+        return Image.memory(
+          imageBytes,
+          width: width,
+          height: height,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => _thumbFallback(),
+        );
+      } catch (e) {
+        debugPrint('[SearchScreen] base64 decode failed: $e');
+        return _thumbFallback();
+      }
+    }
+
+    // Network URL
+    return Image.network(
+      imageUrl,
+      width: width,
+      height: height,
+      fit: BoxFit.cover,
+      errorBuilder: (_, __, ___) => _thumbFallback(),
+    );
   }
 
   Widget _thumbFallback() => Container(

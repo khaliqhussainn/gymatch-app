@@ -107,7 +107,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return score.clamp(50, 99).toInt();
   }
 
-  /// Fetch partners from nearby gyms, enrich with full profile + thread state.
+  /// Fetch nearby partners based on location using new location-based API.
   Future<void> _fetchAllPartners() async {
     if (!mounted) return;
     setState(() {
@@ -119,85 +119,50 @@ class _HomeScreenState extends State<HomeScreen> {
       final gymProvider  = Provider.of<GymProvider>(context, listen: false);
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final chatProvider = Provider.of<ChatProvider>(context, listen: false);
-      final gyms = gymProvider.nearbyGyms;
-
-      if (gyms.isEmpty) {
-        if (mounted) setState(() { _partners = []; _partnersLoading = false; });
-        return;
-      }
 
       final api = ApiClient();
-      final Map<int, Map<String, dynamic>> partnerMap = {};
-
-      // Step 1 — collect active partners from up to 5 nearby gyms
-      final gymsWithPartners = gyms
-          .where((gym) => gym.activePartnersCount > 0)
-          .followedBy(gyms.where((gym) => gym.activePartnersCount <= 0))
-          .take(20)
-          .toList();
-
-      final fetchFutures = gymsWithPartners.map((gym) async {
-        try {
-          final resp = await api.dio.get('/gyms/${gym.id}/active-partners');
-          final List<dynamic> list = resp.data['partners'] ?? [];
-          for (final p in list) {
-            final uid = (p['userId'] as num?)?.toInt() ?? 0;
-            if (uid > 0 && !partnerMap.containsKey(uid)) {
-              partnerMap[uid] = {
-                ...Map<String, dynamic>.from(p),
-                'gymId': gym.id,
-                'gymName': gym.name,
-              };
-            }
-          }
-        } catch (_) {}
+      
+      // Use new location-based API to get all nearby partners at once
+      final resp = await api.dio.get('/users/nearby', queryParameters: {
+        'lat': gymProvider.userLat,
+        'lng': gymProvider.userLng,
+        'radius': gymProvider.radius,
       });
-      await Future.wait(fetchFutures);
 
-      if (partnerMap.isEmpty) {
+      final List<dynamic> partnersList = resp.data['partners'] ?? [];
+      
+      if (partnersList.isEmpty) {
         if (mounted) setState(() { _partners = []; _partnersLoading = false; });
         return;
       }
 
-      // Step 2 — enrich each partner: full profile + existing thread check (parallel)
-      final enrichFutures = partnerMap.entries.map((entry) async {
-        final uid  = entry.key;
-        final base = entry.value;
+      // Enrich each partner with existing thread check
+      final enrichedPartners = await Future.wait(partnersList.map((p) async {
+        final partner = Map<String, dynamic>.from(p);
+        final uid = (partner['userId'] as num?)?.toInt() ?? 0;
+        
         try {
-          final results = await Future.wait([
-            api.dio.get('/users/$uid/profile'),
-            chatProvider.findThreadWithPartner(uid),
-          ]);
-          final profileData = Map<String, dynamic>.from((results[0] as dynamic).data);
-          partnerMap[uid] = {
-            ...base,
-            ...profileData,
-            // keep gymId/gymName from base (profileData won't have them)
-            'gymId':    base['gymId'],
-            'gymName':  base['gymName'],
-            // workoutType from active-partners list (single gym type)
-            'workoutType': base['workoutType'] ?? profileData['workoutTypes'] ?? '',
-            'existingThreadId': results[1] as int?,
-          };
+          final threadId = await chatProvider.findThreadWithPartner(uid);
+          partner['existingThreadId'] = threadId;
         } catch (_) {
-          partnerMap[uid] = {...base, 'existingThreadId': null};
+          partner['existingThreadId'] = null;
         }
-      });
-      await Future.wait(enrichFutures);
 
-      // Step 3 — compute match score with full profile data
-      final partners = partnerMap.values.map((p) {
-        final score = _calcMatchScore(authProvider, p);
-        return {...p, 'matchScore': score};
-      }).toList();
+        // Compute match score
+        final score = _calcMatchScore(authProvider, partner);
+        partner['matchScore'] = score;
+        
+        return partner;
+      }));
 
-      partners.sort((a, b) =>
+      // Sort by match score
+      enrichedPartners.sort((a, b) =>
           ((b['matchScore'] as num?)?.toInt() ?? 0)
               .compareTo((a['matchScore'] as num?)?.toInt() ?? 0));
 
       if (mounted) {
         setState(() {
-          _partners = partners;
+          _partners = enrichedPartners;
           _partnersLoading = false;
         });
       }
@@ -1134,13 +1099,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ClipRRect(
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(23)),
                 child: gym.coverImage != null
-                    ? Image.network(
-                        gym.coverImage!,
-                        height: 200,
-                        width: double.infinity,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) => _imageFallback(),
-                      )
+                    ? _buildGymImage(gym.coverImage!)
                     : _imageFallback(),
               ),
               // Rating Badge — top left
@@ -1293,6 +1252,35 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildGymImage(String imageUrl, {double height = 200}) {
+    // Check if it's a base64 data URI
+    if (imageUrl.startsWith('data:image')) {
+      try {
+        final base64String = imageUrl.split(',').last;
+        final imageBytes = base64Decode(base64String);
+        return Image.memory(
+          imageBytes,
+          height: height,
+          width: double.infinity,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) => _imageFallback(),
+        );
+      } catch (e) {
+        debugPrint('[HomeScreen] base64 decode failed: $e');
+        return _imageFallback();
+      }
+    }
+
+    // Network URL
+    return Image.network(
+      imageUrl,
+      height: height,
+      width: double.infinity,
+      fit: BoxFit.cover,
+      errorBuilder: (context, error, stackTrace) => _imageFallback(),
     );
   }
 

@@ -14,6 +14,9 @@ router.get('/:id/profile', authMiddleware.optionalAuthenticate, userController.g
 // Partner search
 router.get('/search', userController.searchPartners);
 
+// Nearby partners based on location
+router.get('/nearby', authMiddleware.optionalAuthenticate, userController.getNearbyPartners);
+
 // @route   GET api/users
 // @desc    Get all users
 // @access  Public

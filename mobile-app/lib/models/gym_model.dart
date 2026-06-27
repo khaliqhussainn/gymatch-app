@@ -87,6 +87,10 @@ class GymModel {
   }
 
   static String _imageIdentity(String url) {
+    // For base64 data URIs, use the full URL as identity
+    if (url.startsWith('data:image')) {
+      return url;
+    }
     try {
       final uri = Uri.parse(url);
       return uri.queryParameters['photo_reference'] ?? url;
