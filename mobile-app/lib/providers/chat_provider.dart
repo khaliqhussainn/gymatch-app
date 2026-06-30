@@ -5,7 +5,7 @@ import '../services/api_client.dart';
 
 class ChatThreadModel {
   final int id;
-  final int gymId;
+  final int? gymId;
   final String gymName;
   final String matchType;
   final int partnerId;
@@ -31,7 +31,7 @@ class ChatThreadModel {
   factory ChatThreadModel.fromJson(Map<String, dynamic> json) {
     return ChatThreadModel(
       id: json['id'] as int,
-      gymId: json['gymId'] as int,
+      gymId: json['gymId'] as int?,
       gymName: json['gymName'] as String? ?? '',
       matchType: json['matchType'] as String? ?? '',
       partnerId: json['partnerId'] as int,

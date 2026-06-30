@@ -4,7 +4,7 @@ import '../services/location_service.dart';
 
 /// Shows an Apple-compliant pre-permission explanation dialog.
 /// Returns `true` if the user tapped Continue and the system permission
-/// flow should proceed; `false` if they chose Not Now.
+/// flow should proceed.
 Future<bool> showLocationPermissionRationale(BuildContext context) async {
   final result = await showDialog<bool>(
     context: context,
@@ -29,28 +29,25 @@ Future<bool> showLocationPermissionRationale(BuildContext context) async {
         ],
       ),
       content: const Text(
-        'We use your location to show nearby gyms and accurate distance. '
+        'GYMatch uses your location to show nearby gyms and accurate distance. '
         'Your exact location is never shared with other users.',
         style: TextStyle(color: Colors.white70, height: 1.5, fontSize: 14),
       ),
       actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(ctx, false),
-          child: const Text(
-            'Not Now',
-            style: TextStyle(color: Colors.white38, fontWeight: FontWeight.w600),
-          ),
-        ),
-        ElevatedButton(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.primary,
-            foregroundColor: Colors.black,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          ),
-          onPressed: () => Navigator.pop(ctx, true),
-          child: const Text(
-            'Continue',
-            style: TextStyle(fontWeight: FontWeight.w900),
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.black,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20)),
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text(
+              'Continue',
+              style: TextStyle(fontWeight: FontWeight.w900),
+            ),
           ),
         ),
       ],

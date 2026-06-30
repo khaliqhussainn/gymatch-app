@@ -9,52 +9,65 @@ exports.invitePartner = async (req, res) => {
     const userId = req.user.userId;
     const { gymId, partnerId, matchType } = req.body;
 
-    if (!gymId || !partnerId) {
-      return res.status(400).json({ error: 'gymId and partnerId are required.' });
+    console.log('[ChatController.invitePartner] Request:', { userId, gymId, partnerId, matchType });
+
+    if (!partnerId) {
+      return res.status(400).json({ error: 'partnerId is required.' });
     }
 
     if (userId === parseInt(partnerId, 10)) {
       return res.status(400).json({ error: 'You cannot match with yourself.' });
     }
 
-    // Check if an active thread already exists
+    // Check if an active thread already exists (with or without gym)
     const [existing] = await pool.query(
-      `SELECT id FROM chat_threads 
-       WHERE gym_id = ? 
-         AND ((user_1 = ? AND user_2 = ?) OR (user_1 = ? AND user_2 = ?))
-         AND expires_at > NOW()`,
-      [gymId, userId, partnerId, partnerId, userId]
+      `SELECT id FROM chat_threads
+       WHERE ((user_1 = ? AND user_2 = ?) OR (user_1 = ? AND user_2 = ?))
+         AND expires_at > NOW()
+       LIMIT 1`,
+      [userId, partnerId, partnerId, userId]
     );
 
     if (existing.length > 0) {
+      console.log('[ChatController.invitePartner] Existing thread found:', existing[0].id);
       return res.json({ threadId: existing[0].id, msg: 'Active chat thread already exists.' });
     }
 
-    // Create a new thread with a 24-hour expiration
+    // Create a new thread with a 24-hour expiration (gymId can be null)
     const type = matchType || 'CROSSFIT';
+    console.log('[ChatController.invitePartner] Creating thread with gymId:', gymId || null);
     const [result] = await pool.query(
       `INSERT INTO chat_threads (gym_id, user_1, user_2, match_type, expires_at)
        VALUES (?, ?, ?, ?, DATE_ADD(NOW(), INTERVAL 24 HOUR))`,
-      [gymId, userId, partnerId, type]
+      [gymId || null, userId, partnerId, type]
     );
 
     const threadId = result.insertId;
+    console.log('[ChatController.invitePartner] Thread created:', threadId);
 
     // Send a system message or a prompt greeting
+    const greetingMessage = gymId
+      ? `Hey! I matched with you at this gym for ${type}. Down to work out?`
+      : `Hey! I'm looking for a ${type.toLowerCase()} partner. Down to work out?`;
+    console.log('[ChatController.invitePartner] Inserting greeting message:', greetingMessage);
     await pool.query(
       `INSERT INTO chat_messages (thread_id, sender_id, message_text)
        VALUES (?, ?, ?)`,
-      [threadId, userId, `Hey! I matched with you at this gym for ${type}. Down to work out?`]
+      [threadId, userId, greetingMessage]
     );
+    console.log('[ChatController.invitePartner] Greeting message inserted successfully');
 
     try {
       // Get sender name
       const [senderProfile] = await pool.query('SELECT name FROM profiles WHERE user_id = ?', [userId]);
       const senderName = (senderProfile[0] && senderProfile[0].name) || 'A training partner';
 
-      // Get gym name
-      const [gymInfo] = await pool.query('SELECT name FROM gyms WHERE id = ?', [gymId]);
-      const gymName = (gymInfo[0] && gymInfo[0].name) || 'Gold\'s Gym';
+      // Get gym name if gymId exists
+      let gymName = 'a gym';
+      if (gymId) {
+        const [gymInfo] = await pool.query('SELECT name FROM gyms WHERE id = ?', [gymId]);
+        gymName = (gymInfo[0] && gymInfo[0].name) || 'a gym';
+      }
 
       // Create notification
       await pool.query(
@@ -65,7 +78,7 @@ exports.invitePartner = async (req, res) => {
           'New Match Found',
           `${senderName} is looking for a ${type.toLowerCase()} partner at ${gymName} right now.`,
           'chats',
-          gymId
+          gymId || null
         ]
       );
     } catch (notifErr) {
@@ -74,7 +87,13 @@ exports.invitePartner = async (req, res) => {
 
     res.status(201).json({ threadId, msg: 'Matched! Chat thread initiated.' });
   } catch (error) {
-    console.error('[ChatController.invitePartner]', error);
+    console.error('[ChatController.invitePartner] ERROR:', error);
+    console.error('[ChatController.invitePartner] ERROR details:', {
+      message: error.message,
+      code: error.code,
+      sqlMessage: error.sqlMessage,
+      sqlState: error.sqlState
+    });
     res.status(500).json({ error: 'Failed to match with partner.' });
   }
 };
@@ -100,7 +119,7 @@ exports.getThreads = async (req, res) => {
         lm.message_text AS latest_message,
         lm.created_at AS latest_message_time
       FROM chat_threads ct
-      JOIN gyms g ON ct.gym_id = g.id
+      LEFT JOIN gyms g ON ct.gym_id = g.id
       JOIN users other_u ON (other_u.id = ct.user_1 AND ct.user_2 = ?) OR (other_u.id = ct.user_2 AND ct.user_1 = ?)
       LEFT JOIN profiles other_p ON other_u.id = other_p.user_id
       LEFT JOIN (
