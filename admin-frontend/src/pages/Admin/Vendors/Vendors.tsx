@@ -15,7 +15,6 @@ interface Vendor {
 export default function Vendors() {
     const [vendors, setVendors] = useState<Vendor[]>([]);
     const [page, setPage] = useState(1);
-    const [loading, setLoading] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const itemsPerPage = 10;
 
@@ -29,7 +28,6 @@ export default function Vendors() {
     const paginatedVendors = filteredVendors.slice((page - 1) * itemsPerPage, page * itemsPerPage);
 
     const fetchVendors = async () => {
-        setLoading(true);
         try {
             const token = localStorage.getItem('token');
             const res = await fetch(`${import.meta.env.VITE_API_URL}/admin/vendors`, {
@@ -41,8 +39,6 @@ export default function Vendors() {
             }
         } catch (error) {
             console.error(error);
-        } finally {
-            setLoading(false);
         }
     };
 

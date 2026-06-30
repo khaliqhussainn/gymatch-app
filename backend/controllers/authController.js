@@ -302,12 +302,13 @@ exports.appleLogin = async (req, res) => {
       const appleAudiences = dbConfig.appleClientIds && dbConfig.appleClientIds.length
         ? dbConfig.appleClientIds
         : [dbConfig.appleClientId].filter(Boolean);
+      const receivedAud = tokenPayload && tokenPayload.aud ? tokenPayload.aud : 'unknown';
       console.error('[AuthController.appleLogin.audienceMismatch]', {
-        tokenAudience: tokenPayload && tokenPayload.aud,
+        tokenAudience: receivedAud,
         configuredAudiences: appleAudiences,
       });
       return res.status(400).json({
-        error: 'Apple Sign-In is not configured for this app bundle. Please contact support.'
+        error: `Apple Sign-In is not configured for this app bundle (${receivedAud}). Please contact support.`
       });
     }
     res.status(400).json({

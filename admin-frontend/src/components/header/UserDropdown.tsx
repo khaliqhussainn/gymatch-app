@@ -39,19 +39,13 @@ export default function UserDropdown() {
     setIsOpen(false);
   }
 
-  const profileImageUrl = "/images/user/owner.jpg";
-
   return (
     <div className="relative">
       <button
         onClick={toggleDropdown}
         className="flex items-center text-gray-700 dropdown-toggle dark:text-gray-400"
       >
-        <span className="mr-3 overflow-hidden rounded-full h-11 w-11 bg-gray-100">
-          <img src={profileImageUrl} alt="User" className="object-cover w-full h-full" />
-        </span>
-
-        <span className="block mr-1 font-medium text-theme-sm">{user?.first_name || "User"}</span>
+       Admin
         <svg
           className={`stroke-gray-500 dark:stroke-gray-400 transition-transform duration-200 ${isOpen ? "rotate-180" : ""
             }`}

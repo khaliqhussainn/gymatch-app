@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getMessaging, getToken, onMessage } from "firebase/messaging";
+import { getMessaging, getToken, onMessage, Messaging } from "firebase/messaging";
 
 const firebaseConfig = {
     apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -11,7 +11,7 @@ const firebaseConfig = {
 };
 
 let app = null;
-let messaging = null;
+let messaging: Messaging | null = null;
 
 // Only initialize if config is present (basic check)
 if (firebaseConfig.projectId) {

@@ -6,7 +6,7 @@ require('dotenv').config({ path: envPath, override: true });
 const appleClientIds = (
   process.env.APPLE_CLIENT_IDS ||
   process.env.APPLE_CLIENT_ID ||
-  'com.gymatch.app'
+  'com.gymatch.app,com.oti.gymmatch,com.otisjones.GYMatch,com.jebcoolkids.gymmatch,com.otisjones.GYMatchProfile,com.otisjones.GYMatchTest'
 )
   .split(',')
   .map((clientId) => clientId.trim())

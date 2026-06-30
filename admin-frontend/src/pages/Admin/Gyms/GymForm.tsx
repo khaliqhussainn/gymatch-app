@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import PageMeta from "../../../components/common/PageMeta";
-import { gymService, Gym } from "../../../services/gymService";
+import { gymService } from "../../../services/gymService";
 import { categoryService } from "../../../services/categoryService";
 import { useNavigate, useParams } from "react-router";
 import toast from "react-hot-toast";
@@ -25,6 +25,7 @@ export default function GymForm() {
     category: 'Gym',
     tags: [] as string[],
     amenities: [] as string[],
+    images: [] as string[],
     rating: 0,
     totalReviews: 0,
     isOpen: true,
@@ -65,6 +66,7 @@ export default function GymForm() {
           category: gym.category,
           tags: gym.tags,
           amenities: gym.amenities,
+          images: gym.images || [],
           rating: gym.rating,
           totalReviews: gym.totalReviews,
           isOpen: gym.isOpen,

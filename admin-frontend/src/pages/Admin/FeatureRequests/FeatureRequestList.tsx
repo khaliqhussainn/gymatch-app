@@ -99,7 +99,7 @@ export default function FeatureRequestList() {
               <thead className="bg-gray-50 dark:bg-gray-700/50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Type</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Entity</th>
+                  {/* <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Entity</th> */}
                   <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Requester</th>
                   <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Reason</th>
                   <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Status</th>
@@ -128,9 +128,11 @@ export default function FeatureRequestList() {
                           {request.request_type}
                         </span>
                       </td>
-                      <td className="px-6 py-4">
-                        <div className="text-sm font-medium text-gray-900 dark:text-white">{request.entity_name || 'N/A'}</div>
-                      </td>
+                      {/* <td className="px-6 py-4">
+                        <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 uppercase">
+                          {request.request_type === 'gym' ? 'GYM' : 'User'}
+                        </span>
+                      </td> */}
                       <td className="px-6 py-4">
                         <div className="text-sm text-gray-900 dark:text-white">{request.requester_name || 'N/A'}</div>
                         <div className="text-xs text-gray-500 dark:text-gray-400">{request.requester_email}</div>
@@ -242,6 +244,13 @@ export default function FeatureRequestList() {
                       {selectedRequest.status.charAt(0).toUpperCase() + selectedRequest.status.slice(1)}
                     </span>
                   </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Entity Type</label>
+                  <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 uppercase">
+                    {selectedRequest.request_type === 'gym' ? 'GYM' : 'User'}
+                  </span>
                 </div>
 
                 <div>

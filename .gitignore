@@ -1,1 +1,3 @@
 .aider*
+
+flutter run -d web-server --web-hostname localhost --web-port 8080
