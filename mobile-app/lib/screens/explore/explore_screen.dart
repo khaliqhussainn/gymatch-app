@@ -405,7 +405,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
     );
     final selectedGymIcon = gymIcon;
     final userIcon = await _getAssetMarker(
-      'assets/images/user-pin.png',
+      'assets/images/user-location-pin.png',
       height: 55,
     );
 
