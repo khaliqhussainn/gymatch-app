@@ -2,6 +2,7 @@
 
 const pool    = require('../config/connection');
 const bcrypt  = require('bcryptjs');
+const { pickProfileImage } = require('../services/profileImageSeeder');
 
 /**
  * GET /api/seed-partners?secret=gymatch_migrate_2024_secure_key
@@ -99,6 +100,9 @@ exports.runSeeder = async (req, res) => {
     try { await pool.query('SELECT about_me FROM profiles LIMIT 1'); }
     catch (_) { hasAboutMe = false; }
 
+    let femaleIdx = 0;
+    let maleIdx = 0;
+
     for (const p of PARTNERS) {
       try {
         // Skip if email already exists
@@ -118,18 +122,23 @@ exports.runSeeder = async (req, res) => {
         );
         const userId = userResult.insertId;
 
+        const profileImage = pickProfileImage(
+          p.gender,
+          p.gender === 'female' ? femaleIdx++ : maleIdx++
+        );
+
         // Insert profile
         if (hasAboutMe) {
           await pool.query(
-            `INSERT INTO profiles (user_id, name, age, gender, fitness_goals, workout_types, availability, about_me)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-            [userId, p.name, p.age, p.gender, p.fitnessGoals, p.workoutTypes, p.availability, p.aboutMe]
+            `INSERT INTO profiles (user_id, name, age, gender, fitness_goals, workout_types, availability, about_me, profile_image)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [userId, p.name, p.age, p.gender, p.fitnessGoals, p.workoutTypes, p.availability, p.aboutMe, profileImage]
           );
         } else {
           await pool.query(
-            `INSERT INTO profiles (user_id, name, age, gender, fitness_goals, workout_types, availability)
-             VALUES (?, ?, ?, ?, ?, ?, ?)`,
-            [userId, p.name, p.age, p.gender, p.fitnessGoals, p.workoutTypes, p.availability]
+            `INSERT INTO profiles (user_id, name, age, gender, fitness_goals, workout_types, availability, profile_image)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+            [userId, p.name, p.age, p.gender, p.fitnessGoals, p.workoutTypes, p.availability, profileImage]
           );
         }
 

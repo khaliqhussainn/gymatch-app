@@ -17,6 +17,7 @@ require('dotenv').config({ path: path.join(__dirname, '.env') });
 const mysql = require('mysql2/promise');
 const bcrypt = require('bcryptjs');
 const dbConfig = require('./config/db');
+const { pickProfileImage } = require('./services/profileImageSeeder');
 
 // ── Partner definitions ────────────────────────────────────────────────────
 // Each entry: { email, password, name, age, gender, fitnessGoals,
@@ -408,6 +409,8 @@ async function seed() {
 
   let created = 0;
   let skipped = 0;
+  let femaleIdx = 0;
+  let maleIdx = 0;
 
   for (const p of PARTNERS) {
     // Check if user already exists
@@ -428,13 +431,18 @@ async function seed() {
     );
     const userId = userResult.insertId;
 
+    const profileImage = pickProfileImage(
+      p.gender,
+      p.gender === 'female' ? femaleIdx++ : maleIdx++
+    );
+
     // Insert profile — handle optional about_me column
     try {
       await conn.query(
         `INSERT INTO profiles
-           (user_id, name, age, gender, fitness_goals, workout_types, availability, about_me)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-        [userId, p.name, p.age, p.gender, p.fitnessGoals, p.workoutTypes, p.availability, p.aboutMe]
+           (user_id, name, age, gender, fitness_goals, workout_types, availability, about_me, profile_image)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [userId, p.name, p.age, p.gender, p.fitnessGoals, p.workoutTypes, p.availability, p.aboutMe, profileImage]
       );
     } catch (colErr) {
       if (colErr.code === 'ER_BAD_FIELD_ERROR') {
