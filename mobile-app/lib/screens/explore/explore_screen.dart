@@ -108,10 +108,37 @@ class _ExploreScreenState extends State<ExploreScreen> {
       _gymProvider = Provider.of<GymProvider>(context, listen: false);
       _gymProvider!.addListener(_onGymProviderNotification);
       _gymProvider!.initLocation();
+      _gymProvider!.fetchCategories();
       _lastLat = _gymProvider!.userLat;
       _lastLng = _gymProvider!.userLng;
     });
   }
+
+  // Used only until the admin-managed category list loads (or if the
+  // request fails), so the filter sheet is never empty.
+  static const List<String> _fallbackCategories = [
+    'All',
+    'CrossFit',
+    'MMA',
+    'Yoga',
+    'Strength Training',
+    'Bodybuilding',
+    'Powerlifting',
+    'Cardio Training',
+    'HIIT',
+    'Functional Fitness',
+    'Boxing',
+    'Kickboxing',
+    'Pilates',
+    'Zumba',
+    'Cycling / Spinning',
+    'Calisthenics',
+    'Personal Training',
+    'Circuit Training',
+    'Aerobics',
+    'Dance Fitness',
+    'Mobility & Stretching',
+  ];
 
   @override
   void dispose() {
@@ -826,29 +853,10 @@ class _ExploreScreenState extends State<ExploreScreen> {
                       height: 38,
                       child: ListView(
                         scrollDirection: Axis.horizontal,
-                        children: [
-                          'All',
-                          'CrossFit',
-                          'MMA',
-                          'Yoga',
-                          'Strength Training',
-                          'Bodybuilding',
-                          'Powerlifting',
-                          'Cardio Training',
-                          'HIIT',
-                          'Functional Fitness',
-                          'Boxing',
-                          'Kickboxing',
-                          'Pilates',
-                          'Zumba',
-                          'Cycling / Spinning',
-                          'Calisthenics',
-                          'Personal Training',
-                          'Circuit Training',
-                          'Aerobics',
-                          'Dance Fitness',
-                          'Mobility & Stretching',
-                        ].map((cat) {
+                        children: (gymProvider.categories.isNotEmpty
+                                ? <String>['All', ...gymProvider.categories]
+                                : _fallbackCategories)
+                            .map((cat) {
                           final isSelected = cat == _selectedCategory;
                           return Padding(
                             padding: const EdgeInsets.only(right: 8),

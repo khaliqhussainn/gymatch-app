@@ -601,6 +601,28 @@ exports.runMigrations = async (req, res) => {
         { id: 6, name: 'Pilates' },
         { id: 7, name: 'Boxing' },
         { id: 8, name: 'Personal Training' },
+        // The categories below were previously hardcoded in the mobile app
+        // (home screen filter chips, gym registration/edit dropdowns).
+        // Seeded here so switching those screens to fetch from this table
+        // doesn't drop any options users/gym owners already relied on.
+        { id: 9, name: 'Strength Training' },
+        { id: 10, name: 'Bodybuilding' },
+        { id: 11, name: 'Powerlifting' },
+        { id: 12, name: 'Cardio Training' },
+        { id: 13, name: 'HIIT' },
+        { id: 14, name: 'Kickboxing' },
+        { id: 15, name: 'Zumba' },
+        { id: 16, name: 'Cycling / Spinning' },
+        { id: 17, name: 'Calisthenics' },
+        { id: 18, name: 'Circuit Training' },
+        { id: 19, name: 'Aerobics' },
+        { id: 20, name: 'Dance Fitness' },
+        { id: 21, name: 'Mobility & Stretching' },
+        { id: 22, name: 'Swimming' },
+        { id: 23, name: 'Tennis' },
+        { id: 24, name: 'Basketball' },
+        { id: 25, name: 'Climbing' },
+        { id: 26, name: 'Martial Arts' },
       ];
 
       for (const category of categoriesToSeed) {

@@ -34,7 +34,9 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _partnersLoading = false;
   String? _partnersError;
 
-  final List<String> _categories = [
+  // Used only until the admin-managed category list loads (or if the
+  // request fails), so the filter bar is never empty.
+  static const List<String> _fallbackCategories = [
     'All',
     'CrossFit',
     'MMA',
@@ -65,6 +67,7 @@ class _HomeScreenState extends State<HomeScreen> {
       _gymProvider = Provider.of<GymProvider>(context, listen: false);
       _gymProvider!.addListener(_onProviderLocationChanged);
       _gymProvider!.initLocation();
+      _gymProvider!.fetchCategories();
       _lastLat = _gymProvider!.userLat;
       _lastLng = _gymProvider!.userLng;
     });
@@ -219,6 +222,9 @@ class _HomeScreenState extends State<HomeScreen> {
       body: SafeArea(
         child: Consumer<GymProvider>(
           builder: (context, gymProvider, _) {
+            final categories = gymProvider.categories.isNotEmpty
+                ? <String>['All', ...gymProvider.categories]
+                : _fallbackCategories;
             return RefreshIndicator(
               color: AppColors.primary,
               backgroundColor: const Color(0xFF1A1A1A),
@@ -421,7 +427,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         child: ListView.builder(
                           scrollDirection: Axis.horizontal,
                           padding: const EdgeInsets.symmetric(horizontal: 16),
-                          itemCount: _categories.length,
+                          itemCount: categories.length,
                           itemBuilder: (context, index) {
                             final isSelected = index == _selectedCategoryIndex;
                             return Padding(
@@ -430,7 +436,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 onTap: () {
                                   setState(() => _selectedCategoryIndex = index);
                                   gymProvider.setCategory(
-                                    index == 0 ? '' : _categories[index],
+                                    index == 0 ? '' : categories[index],
                                   );
                                 },
                                 child: AnimatedContainer(
@@ -454,7 +460,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                         : null,
                                   ),
                                   child: Text(
-                                    _categories[index],
+                                    categories[index],
                                     style: TextStyle(
                                       color: isSelected ? Colors.black : Colors.white,
                                       fontWeight: isSelected ? FontWeight.w800 : FontWeight.w500,

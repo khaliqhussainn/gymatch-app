@@ -30,8 +30,9 @@ class _EditGymInfoScreenState extends State<EditGymInfoScreen> {
   late TextEditingController _locationUrlController;
   late TextEditingController _categoryController;
 
-  // Category options
-  final List<String> _categories = [
+  // Category options — replaced with admin-managed categories once
+  // _loadCategories() resolves.
+  List<String> _categories = [
     'GYM',
     'CROSSFIT',
     'YOGA',
@@ -105,6 +106,37 @@ class _EditGymInfoScreenState extends State<EditGymInfoScreen> {
     _categoryController = TextEditingController();
     _initializeDayHours();
     _loadGymData();
+    _loadCategories();
+  }
+
+  Future<void> _loadCategories() async {
+    final gymProvider = context.read<GymProvider>();
+    await gymProvider.fetchCategories();
+    if (!mounted || gymProvider.categories.isEmpty) return;
+    setState(() {
+      _categories = gymProvider.categories;
+      _reconcileSelectedCategory();
+    });
+  }
+
+  /// Keeps the dropdown's current value in sync with _categories so
+  /// DropdownButton never throws for a value it doesn't contain — this can
+  /// happen because the gym's stored category and the admin-managed list
+  /// may differ in casing (e.g. "CROSSFIT" vs "CrossFit").
+  void _reconcileSelectedCategory() {
+    final current = _selectedCategory;
+    if (current == null || current.isEmpty || _categories.contains(current)) {
+      return;
+    }
+    final ciMatch = _categories.firstWhere(
+      (c) => c.toLowerCase() == current.toLowerCase(),
+      orElse: () => '',
+    );
+    if (ciMatch.isNotEmpty) {
+      _selectedCategory = ciMatch;
+    } else {
+      _categories = [..._categories, current];
+    }
   }
 
   void _initializeDayHours() {
@@ -145,6 +177,7 @@ class _EditGymInfoScreenState extends State<EditGymInfoScreen> {
           _imageUrls = List.from(gym.displayImages);
           _selectedAmenities.addAll(gym.amenities);
           _selectedCategory = gym.category;
+          _reconcileSelectedCategory();
           _parseOpenHours(gym.openHours);
           _isLoading = false;
         });
