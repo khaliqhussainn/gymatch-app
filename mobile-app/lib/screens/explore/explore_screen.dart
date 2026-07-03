@@ -18,6 +18,7 @@ import '../../models/gym_model.dart';
 // app_config and featured_badge not used in this screen
 import '../../widgets/location_permission_dialog.dart';
 import '../../services/location_service.dart';
+import '../../utils/distance_format.dart';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Google Maps Dark Style JSON (defined once as a const — never re-parsed)
@@ -62,7 +63,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
   GoogleMapController? _mapController;
   int _selectedFilterIndex = -1;
   bool _isOpenNow = false;
-  String _selectedDistance = '15 KM';
+  double _selectedRadiusKm = 15.0;
   String _selectedCategory = 'All';
   String _selectedRating = '';
   bool _featuredOnly = false;
@@ -652,7 +653,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
     switch (index) {
       case 0: // Open Now
         setState(() {
-          _selectedDistance = '${rad.toInt()} KM';
+          _selectedRadiusKm = rad;
           _selectedCategory = 'All';
           _selectedRating = '';
           _isOpenNow = true;
@@ -662,7 +663,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
         break;
       case 1: // Near Me
         setState(() {
-          _selectedDistance = '5 KM';
+          _selectedRadiusKm = 5;
           _selectedCategory = 'All';
           _selectedRating = '';
           _isOpenNow = false;
@@ -673,7 +674,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
         break;
       case 2:
         setState(() {
-          _selectedDistance = '15 KM';
+          _selectedRadiusKm = 15;
           _selectedCategory = 'CrossFit';
           _selectedRating = '';
           _isOpenNow = false;
@@ -682,7 +683,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
         break;
       case 3:
         setState(() {
-          _selectedDistance = '15 KM';
+          _selectedRadiusKm = 15;
           _selectedCategory = 'MMA';
           _selectedRating = '';
           _isOpenNow = false;
@@ -691,7 +692,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
         break;
       case 4:
         setState(() {
-          _selectedDistance = '15 KM';
+          _selectedRadiusKm = 15;
           _selectedCategory = 'Boxing';
           _selectedRating = '';
           _isOpenNow = false;
@@ -700,7 +701,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
         break;
       case 5:
         setState(() {
-          _selectedDistance = '15 KM';
+          _selectedRadiusKm = 15;
           _selectedCategory = 'HIIT';
           _selectedRating = '';
           _isOpenNow = false;
@@ -709,7 +710,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
         break;
       case 6:
         setState(() {
-          _selectedDistance = '15 KM';
+          _selectedRadiusKm = 15;
           _selectedCategory = 'Yoga';
           _selectedRating = '';
           _isOpenNow = false;
@@ -778,7 +779,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
                         ),
                         TextButton(
                           onPressed: () => setModalState(() {
-                            _selectedDistance = '15 KM';
+                            _selectedRadiusKm = 15;
                             _selectedCategory = 'All';
                             _selectedRating = '';
                             _isOpenNow = false;
@@ -808,16 +809,16 @@ class _ExploreScreenState extends State<ExploreScreen> {
                       height: 38,
                       child: ListView(
                         scrollDirection: Axis.horizontal,
-                        children: ['1 KM', '3 KM', '5 KM', '10 KM', '15 KM']
+                        children: const [1.0, 3.0, 5.0, 10.0, 15.0]
                             .map((dist) {
-                          final isSelected = dist == _selectedDistance;
+                          final isSelected = dist == _selectedRadiusKm;
                           return Padding(
                             padding: const EdgeInsets.only(right: 8),
                             child: ChoiceChip(
-                              label: Text(dist),
+                              label: Text(formatDistanceKm(dist)),
                               selected: isSelected,
-                              onSelected: (_) =>
-                                  setModalState(() => _selectedDistance = dist),
+                              onSelected: (_) => setModalState(
+                                  () => _selectedRadiusKm = dist),
                               selectedColor: AppColors.primary,
                               backgroundColor: Colors.transparent,
                               labelStyle: TextStyle(
@@ -1031,9 +1032,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
                         ),
                         onPressed: () async {
                           Navigator.pop(context);
-                          final radius = double.tryParse(
-                                  _selectedDistance.replaceAll(' KM', '')) ??
-                              15.0;
+                          final radius = _selectedRadiusKm;
                           setState(() {
                             _selectedFilterIndex = -1;
                             _selectedPin = null;
