@@ -613,12 +613,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final aboutMeCtrl = TextEditingController(text: profile?['aboutMe'] ?? '');
 
     // Dropdown selections — initialise from saved profile
-    String? selectedGoal = profile?['fitnessGoals']?.toString().isNotEmpty == true
-        ? profile!['fitnessGoals']
-        : null;
-    String? selectedWorkout = profile?['workoutTypes']?.toString().isNotEmpty == true
-        ? profile!['workoutTypes']
-        : null;
+    List<String> selectedGoals = _splitCommaList(profile?['fitnessGoals']);
+    List<String> selectedWorkouts = _splitCommaList(profile?['workoutTypes']);
     String? selectedAvailability = profile?['availability']?.toString().isNotEmpty == true
         ? profile!['availability']
         : null;
@@ -806,20 +802,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     _buildEditField(controller: nameCtrl, label: 'Full Name', hint: 'Enter your name'),
                     _buildEditField(controller: ageCtrl, label: 'Age', hint: 'Enter your age', isNumber: true),
 
-                    // ── Fitness Goals Dropdown ───────────────────────
-                    _buildDropdownField(
+                    // ── Fitness Goals Multi-Select ───────────────────
+                    _buildMultiSelectField(
                       label: 'Fitness Goal',
-                      value: selectedGoal,
+                      selectedValues: selectedGoals,
                       items: fitnessGoals,
-                      onChanged: (val) => setModalState(() => selectedGoal = val),
+                      onChanged: (vals) => setModalState(() => selectedGoals = vals),
                     ),
 
-                    // ── Workout Types Dropdown ───────────────────────
-                    _buildDropdownField(
+                    // ── Workout Types Multi-Select ───────────────────
+                    _buildMultiSelectField(
                       label: 'Workout Type',
-                      value: selectedWorkout,
+                      selectedValues: selectedWorkouts,
                       items: workoutTypes,
-                      onChanged: (val) => setModalState(() => selectedWorkout = val),
+                      onChanged: (vals) => setModalState(() => selectedWorkouts = vals),
                     ),
 
                     // ── Availability Dropdown ────────────────────────
@@ -869,8 +865,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           final success = await authProvider.updateProfile(
                             name: nameCtrl.text.trim(),
                             age: ageVal,
-                            fitnessGoals: selectedGoal,
-                            workoutTypes: selectedWorkout,
+                            fitnessGoals: selectedGoals.isNotEmpty ? selectedGoals.join(', ') : null,
+                            workoutTypes: selectedWorkouts.isNotEmpty ? selectedWorkouts.join(', ') : null,
                             availability: selectedAvailability,
                             profileImage: localImageBase64,
                             aboutMe: aboutMeCtrl.text.trim().isNotEmpty ? aboutMeCtrl.text.trim() : null,
@@ -1307,6 +1303,184 @@ class _ProfileScreenState extends State<ProfileScreen> {
         },
       ),
     ),
+    );
+  }
+
+  /// Splits a saved comma-separated field (e.g. "Build Muscle, Lose Weight")
+  /// back into a list for the multi-select UI.
+  List<String> _splitCommaList(dynamic raw) {
+    final str = raw?.toString() ?? '';
+    if (str.trim().isEmpty) return [];
+    return str.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
+  }
+
+  Widget _buildMultiSelectField({
+    required String label,
+    required List<String> selectedValues,
+    required List<String> items,
+    required ValueChanged<List<String>> onChanged,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label.toUpperCase(),
+            style: const TextStyle(color: Colors.white60, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.8),
+          ),
+          const SizedBox(height: 8),
+          InkWell(
+            borderRadius: BorderRadius.circular(12),
+            onTap: () async {
+              final result = await _showMultiSelectSheet(
+                title: label,
+                items: items,
+                initiallySelected: selectedValues,
+              );
+              if (result != null) onChanged(result);
+            },
+            child: Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFF1E1E1E),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.white10),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: selectedValues.isEmpty
+                        ? Text('Select $label', style: const TextStyle(color: Colors.white24, fontSize: 14))
+                        : Wrap(
+                            spacing: 6,
+                            runSpacing: 6,
+                            children: selectedValues.map((v) => Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                              decoration: BoxDecoration(
+                                color: AppColors.primary,
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Text(
+                                v,
+                                style: const TextStyle(color: Colors.black, fontSize: 12, fontWeight: FontWeight.w700),
+                              ),
+                            )).toList(),
+                          ),
+                  ),
+                  const Icon(Icons.keyboard_arrow_down_rounded, color: Colors.white38),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<List<String>?> _showMultiSelectSheet({
+    required String title,
+    required List<String> items,
+    required List<String> initiallySelected,
+  }) {
+    final selected = {...initiallySelected};
+    return showModalBottomSheet<List<String>>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: const Color(0xFF121212),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (sheetContext) => SafeArea(
+        child: StatefulBuilder(
+          builder: (context, setSheetState) {
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom,
+                left: 20,
+                right: 20,
+                top: 16,
+              ),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.75),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 48,
+                        height: 4,
+                        margin: const EdgeInsets.only(bottom: 16),
+                        decoration: BoxDecoration(
+                          color: Colors.white24,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            title.toUpperCase(),
+                            style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w900, letterSpacing: 1.0),
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: () => setSheetState(() => selected.clear()),
+                          child: const Text('Clear', style: TextStyle(color: Colors.white54)),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Flexible(
+                      child: ListView(
+                        shrinkWrap: true,
+                        children: items.map((item) {
+                          final isSelected = selected.contains(item);
+                          return CheckboxListTile(
+                            value: isSelected,
+                            onChanged: (checked) => setSheetState(() {
+                              if (checked == true) {
+                                selected.add(item);
+                              } else {
+                                selected.remove(item);
+                              }
+                            }),
+                            title: Text(item, style: const TextStyle(color: Colors.white, fontSize: 14)),
+                            activeColor: AppColors.primary,
+                            checkColor: Colors.black,
+                            controlAffinity: ListTileControlAffinity.leading,
+                            contentPadding: EdgeInsets.zero,
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: Colors.black,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+                        ),
+                        onPressed: () => Navigator.pop(context, selected.toList()),
+                        child: Text(
+                          'Done (${selected.length} selected)',
+                          style: const TextStyle(fontWeight: FontWeight.w800),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+      ),
     );
   }
 
