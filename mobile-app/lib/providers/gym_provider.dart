@@ -40,6 +40,10 @@ class GymProvider extends ChangeNotifier {
   List<String> _categories = [];
   List<String> get categories => _categories;
 
+  // ── Admin-managed location presets ──────────────────────────────────────
+  List<LocationPresetModel> _locationPresets = [];
+  List<LocationPresetModel> get locationPresets => _locationPresets;
+
   GymLoadState get state => _state;
   String get errorMessage => _errorMessage;
   String get selectedCategory => _selectedCategory;
@@ -310,6 +314,21 @@ class GymProvider extends ChangeNotifier {
       final response = await _api.dio.get('/categories');
       final List<dynamic> data = response.data['data'] ?? [];
       _categories = data.map((c) => c['name'].toString()).toList();
+      notifyListeners();
+    } catch (_) {
+      // Keep whatever we already had — caller falls back to a static list.
+    }
+  }
+
+  /// Fetch admin-managed location presets for the Location Preferences
+  /// screen. Leaves the previous list untouched on failure so callers can
+  /// fall back to a static default.
+  Future<void> fetchLocationPresets() async {
+    try {
+      final response = await _api.dio.get('/locations');
+      final List<dynamic> data = response.data['data'] ?? [];
+      _locationPresets =
+          data.map((l) => LocationPresetModel.fromJson(l)).toList();
       notifyListeners();
     } catch (_) {
       // Keep whatever we already had — caller falls back to a static list.

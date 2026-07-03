@@ -27,6 +27,7 @@ import UserList from "./pages/Admin/Users/UserList";
 import CategoryList from "./pages/Admin/Categories/CategoryList";
 import TagList from "./pages/Admin/Categories/TagList";
 import AmenityList from "./pages/Admin/Categories/AmenityList";
+import LocationPresetList from "./pages/Admin/Locations/LocationPresetList";
 import FeatureRequestList from "./pages/Admin/FeatureRequests/FeatureRequestList";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 
@@ -80,6 +81,7 @@ export default function App() {
             <Route path="/categories" element={<CategoryList />} />
             <Route path="/tags" element={<TagList />} />
             <Route path="/amenities" element={<AmenityList />} />
+            <Route path="/location-preferences" element={<LocationPresetList />} />
             <Route path="/feature-requests" element={<FeatureRequestList />} />
 
           </Route>

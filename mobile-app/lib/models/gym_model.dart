@@ -196,3 +196,31 @@ class GymPlan {
     );
   }
 }
+
+/// A preset "preferred area" option for the Location Preferences screen,
+/// admin-managed via the /api/locations endpoint.
+class LocationPresetModel {
+  final int id;
+  final String label;
+  final String subtitle;
+  final double latitude;
+  final double longitude;
+
+  LocationPresetModel({
+    required this.id,
+    required this.label,
+    required this.subtitle,
+    required this.latitude,
+    required this.longitude,
+  });
+
+  factory LocationPresetModel.fromJson(Map<String, dynamic> json) {
+    return LocationPresetModel(
+      id: json['id'] as int? ?? 0,
+      label: json['label'] as String? ?? '',
+      subtitle: json['subtitle'] as String? ?? '',
+      latitude: GymModel._toDouble(json['latitude']),
+      longitude: GymModel._toDouble(json['longitude']),
+    );
+  }
+}
