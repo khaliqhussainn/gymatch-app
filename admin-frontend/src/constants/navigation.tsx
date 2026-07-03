@@ -91,6 +91,11 @@ export const adminItems: NavItem[] = [
         path: "/categories",
     },
     {
+        icon: <BoxCubeIcon />,
+        name: "Location Preferences",
+        path: "/location-preferences",
+    },
+    {
         icon: <PieChartIcon />,
         name: "Feature Requests",
         path: "/feature-requests",

@@ -28,9 +28,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   void _loadData() {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final gymProvider = Provider.of<GymProvider>(context, listen: false);
+    gymProvider.fetchLocationPresets();
     if (authProvider.isAuthenticated) {
       authProvider.fetchProfile();
-      Provider.of<GymProvider>(context, listen: false).fetchSavedGyms();
+      gymProvider.fetchSavedGyms();
     }
   }
 
@@ -949,33 +951,46 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  // Used only until the admin-managed location preset list loads (or if
+  // the request fails), so the picker is never empty.
+  static const List<_LocationOption> _fallbackLocationOptions = [
+    _LocationOption(
+      label: 'Venice Beach, CA',
+      subtitle: 'California fitness hubs',
+      latitude: 33.9922,
+      longitude: -118.4718,
+    ),
+    _LocationOption(
+      label: 'Copacabana, Brazil',
+      subtitle: 'Brazilian fitness scene',
+      latitude: -22.9711,
+      longitude: -43.1886,
+    ),
+    _LocationOption(
+      label: 'Washington DC',
+      subtitle: 'Washington DC fitness scene',
+      latitude: 38.8893,
+      longitude: -77.0091,
+    ),
+    _LocationOption(
+      label: 'Toronto, Canada',
+      subtitle: 'Canadian fitness scene',
+      latitude: 43.6695,
+      longitude: -79.3870,
+    ),
+  ];
+
   void _showLocationPreferencesBottomSheet(GymProvider gymProvider) {
-    final locationOptions = [
-      _LocationOption(
-        label: 'Venice Beach, CA',
-        subtitle: 'California fitness hubs',
-        latitude: 33.9922,
-        longitude: -118.4718,
-      ),
-      _LocationOption(
-        label: 'Copacabana, Brazil',
-        subtitle: 'Brazilian fitness scene',
-        latitude: -22.9711,
-        longitude: -43.1886,
-      ),
-      _LocationOption(
-        label: 'Washington DC',
-        subtitle: 'Washington DC fitness scene',
-        latitude: 38.8893,
-        longitude: -77.0091,
-      ),
-      _LocationOption(
-        label: 'Toronto, Canada',
-        subtitle: 'Canadian fitness scene',
-        latitude: 43.6695,
-        longitude: -79.3870,
-      ),
-    ];
+    final locationOptions = gymProvider.locationPresets.isNotEmpty
+        ? gymProvider.locationPresets
+            .map((l) => _LocationOption(
+                  label: l.label,
+                  subtitle: l.subtitle,
+                  latitude: l.latitude,
+                  longitude: l.longitude,
+                ))
+            .toList()
+        : _fallbackLocationOptions;
 
     var selectedLabel = gymProvider.locationLabel;
     var selectedLat = gymProvider.userLat;

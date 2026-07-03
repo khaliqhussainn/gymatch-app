@@ -686,6 +686,57 @@ exports.runMigrations = async (req, res) => {
       }
     }
 
+    // ── Migration 15: Create location_presets table ──────────────────────
+    log('\n[15/16] Checking location_presets table...');
+    try {
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS location_presets (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          label VARCHAR(255) NOT NULL,
+          subtitle VARCHAR(255),
+          latitude DOUBLE NOT NULL,
+          longitude DOUBLE NOT NULL,
+          status ENUM('active', 'inactive') DEFAULT 'active',
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        )
+      `);
+      log('  ✓ location_presets table ready.');
+    } catch (e) {
+      log(`  ⚠️ location_presets table: ${e.message}`);
+    }
+
+    // ── Seed location presets ─────────────────────────────────────────
+    log('\n[16/16] Seeding location presets...');
+    try {
+      const [existingLocations] = await pool.query('SELECT id FROM location_presets');
+      const existingIds = existingLocations.map(l => l.id);
+
+      const locationsToSeed = [
+        // Karachi was already a seeded gym region (gyms 1-6, 14-15) but was
+        // missing from the app's hardcoded preset list — added here so the
+        // admin-managed list matches every region the backend actually has.
+        { id: 1, label: 'Karachi, Pakistan', subtitle: 'Pakistani fitness scene', latitude: 24.8607, longitude: 67.0011 },
+        { id: 2, label: 'Venice Beach, CA', subtitle: 'California fitness hubs', latitude: 33.9922, longitude: -118.4718 },
+        { id: 3, label: 'Copacabana, Brazil', subtitle: 'Brazilian fitness scene', latitude: -22.9711, longitude: -43.1886 },
+        { id: 4, label: 'Washington DC', subtitle: 'Washington DC fitness scene', latitude: 38.8893, longitude: -77.0091 },
+        { id: 5, label: 'Toronto, Canada', subtitle: 'Canadian fitness scene', latitude: 43.6695, longitude: -79.3870 },
+      ];
+
+      for (const loc of locationsToSeed) {
+        if (!existingIds.includes(loc.id)) {
+          await pool.query(
+            'INSERT INTO location_presets (id, label, subtitle, latitude, longitude, status) VALUES (?, ?, ?, ?, ?, "active")',
+            [loc.id, loc.label, loc.subtitle, loc.latitude, loc.longitude]
+          );
+          log(`  ✓ Location "${loc.label}" seeded.`);
+        }
+      }
+      log('  ✓ Location presets seeded successfully.');
+    } catch (seedErr) {
+      fail(`  ⚠️ Seeding location presets failed: ${seedErr.message}`);
+    }
+
     // ── Summary ─────────────────────────────────────────────────────────
     log('\n═══════════════════════════════════════');
     log('  All migrations completed successfully');
