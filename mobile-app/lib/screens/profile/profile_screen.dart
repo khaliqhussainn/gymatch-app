@@ -8,6 +8,7 @@ import '../../routes/app_router.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/gym_provider.dart';
 import '../../widgets/location_permission_dialog.dart';
+import '../../utils/distance_format.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -1202,7 +1203,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     children: [3.0, 5.0, 10.0, 15.0, 25.0].map((radius) {
                       final isSelected = selectedRadius == radius;
                       return ChoiceChip(
-                        label: Text('${radius.toInt()} KM'),
+                        label: Text(formatDistanceKm(radius)),
                         selected: isSelected,
                         showCheckmark: false,
                         selectedColor: AppColors.primary,

@@ -1,3 +1,5 @@
+import '../utils/distance_format.dart';
+
 /// GymModel - data class representing a Gym from the backend API.
 class GymModel {
   final int id;
@@ -48,12 +50,7 @@ class GymModel {
     this.isActivePartner = false,
   });
 
-  String get distanceLabel {
-    if (distanceKm < 1.0) {
-      return '${(distanceKm * 1000).round()} M';
-    }
-    return '${distanceKm.toStringAsFixed(1)} KM';
-  }
+  String get distanceLabel => formatDistanceKm(distanceKm);
 
   /// True when a real phone number is available (not a placeholder).
   bool get hasContactPhone {
