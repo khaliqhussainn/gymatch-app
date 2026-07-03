@@ -36,6 +36,10 @@ class GymProvider extends ChangeNotifier {
 
   List<String> get searchHistory => List.unmodifiable(_searchHistory);
 
+  // ── Admin-managed gym categories ────────────────────────────────────────
+  List<String> _categories = [];
+  List<String> get categories => _categories;
+
   GymLoadState get state => _state;
   String get errorMessage => _errorMessage;
   String get selectedCategory => _selectedCategory;
@@ -296,6 +300,20 @@ class GymProvider extends ChangeNotifier {
     }
 
     notifyListeners();
+  }
+
+  /// Fetch admin-managed gym categories (filter chips, registration/edit
+  /// dropdowns). Leaves the previous list untouched on failure so callers
+  /// can fall back to a static default.
+  Future<void> fetchCategories() async {
+    try {
+      final response = await _api.dio.get('/categories');
+      final List<dynamic> data = response.data['data'] ?? [];
+      _categories = data.map((c) => c['name'].toString()).toList();
+      notifyListeners();
+    } catch (_) {
+      // Keep whatever we already had — caller falls back to a static list.
+    }
   }
 
   /// Set category filter and refresh.

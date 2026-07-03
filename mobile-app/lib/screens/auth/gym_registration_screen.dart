@@ -5,6 +5,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/gym_provider.dart';
 import '../../config/app_colors.dart';
 import '../../routes/app_router.dart';
 
@@ -26,7 +27,8 @@ class _GymRegistrationScreenState extends State<GymRegistrationScreen> {
   final _contactPhoneController = TextEditingController();
   
   String _selectedCategory = 'GYM';
-  final List<String> _categories = [
+  // Replaced with admin-managed categories once _loadCategories() resolves.
+  List<String> _categories = [
     'GYM', 'CrossFit', 'MMA', 'Yoga', 'Strength Training',
     'Bodybuilding', 'Powerlifting', 'Cardio Training', 'HIIT',
     'Functional Fitness', 'Boxing', 'Kickboxing', 'Pilates'
@@ -54,6 +56,19 @@ class _GymRegistrationScreenState extends State<GymRegistrationScreen> {
     _confirmPasswordController.addListener(_validateForm);
     _gymNameController.addListener(_validateForm);
     _locationUrlController.addListener(_validateForm);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadCategories());
+  }
+
+  Future<void> _loadCategories() async {
+    final gymProvider = context.read<GymProvider>();
+    await gymProvider.fetchCategories();
+    if (!mounted || gymProvider.categories.isEmpty) return;
+    setState(() {
+      _categories = gymProvider.categories;
+      if (!_categories.contains(_selectedCategory)) {
+        _selectedCategory = _categories.first;
+      }
+    });
   }
 
   void _validateForm() {
