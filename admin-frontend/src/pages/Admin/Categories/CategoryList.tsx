@@ -57,6 +57,19 @@ export default function CategoryList() {
     }
   };
 
+  const handleDelete = async (category: Category) => {
+    if (!confirm(`Are you sure you want to delete "${category.name}"?`)) {
+      return;
+    }
+    try {
+      await categoryApiService.deleteCategory(category.id);
+      toast.success('Category deleted successfully');
+      fetchCategories();
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to delete category');
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -152,6 +165,12 @@ export default function CategoryList() {
                           className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
                         >
                           Edit
+                        </button>
+                        <button
+                          onClick={() => handleDelete(category)}
+                          className="ml-4 text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 transition-colors"
+                        >
+                          Delete
                         </button>
                       </td>
                     </tr>
