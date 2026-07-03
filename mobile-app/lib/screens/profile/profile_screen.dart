@@ -668,9 +668,42 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
             Future<void> pickImage() async {
               try {
+                final source = await showModalBottomSheet<ImageSource>(
+                  context: context,
+                  backgroundColor: const Color(0xFF1A1A1A),
+                  shape: const RoundedRectangleBorder(
+                    borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                  ),
+                  builder: (sheetContext) => SafeArea(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const SizedBox(height: 8),
+                        Container(
+                          width: 48, height: 5,
+                          margin: const EdgeInsets.only(bottom: 12),
+                          decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(3)),
+                        ),
+                        ListTile(
+                          leading: const Icon(Icons.camera_alt_rounded, color: AppColors.primary),
+                          title: const Text('Take Photo', style: TextStyle(color: Colors.white)),
+                          onTap: () => Navigator.pop(sheetContext, ImageSource.camera),
+                        ),
+                        ListTile(
+                          leading: const Icon(Icons.photo_library_rounded, color: AppColors.primary),
+                          title: const Text('Choose from Gallery', style: TextStyle(color: Colors.white)),
+                          onTap: () => Navigator.pop(sheetContext, ImageSource.gallery),
+                        ),
+                        const SizedBox(height: 8),
+                      ],
+                    ),
+                  ),
+                );
+                if (source == null) return;
+
                 final picker = ImagePicker();
                 final picked = await picker.pickImage(
-                  source: ImageSource.gallery,
+                  source: source,
                   maxWidth: 400,
                   maxHeight: 400,
                   imageQuality: 80,
