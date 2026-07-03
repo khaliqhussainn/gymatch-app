@@ -360,7 +360,12 @@ class _ExploreScreenState extends State<ExploreScreen> {
     String assetPath, {
     double height = 56,
   }) async {
-    final key = 'asset_${assetPath}_$height';
+    // Render at the device's actual pixel density so the marker stays sharp
+    // on retina screens — BitmapDescriptor.bytes() defaults to 1 image pixel
+    // = 1 logical pixel, so without this a 2x/3x phone stretches the bitmap
+    // and it comes out blurry.
+    final devicePixelRatio = MediaQuery.of(context).devicePixelRatio;
+    final key = 'asset_${assetPath}_${height}_$devicePixelRatio';
     if (_markerCache.containsKey(key)) {
       return _markerCache[key]!;
     }
@@ -371,17 +376,32 @@ class _ExploreScreenState extends State<ExploreScreen> {
     );
     final sourceFrame = await sourceCodec.getNextFrame();
     final aspectRatio = sourceFrame.image.width / sourceFrame.image.height;
+
+    // Decode enough real pixels to back the logical size at device density,
+    // but never upscale past the source asset's native resolution.
+    final targetPixelHeight = math.min(
+      (height * devicePixelRatio).round(),
+      sourceFrame.image.height,
+    );
+    final targetPixelWidth = (targetPixelHeight * aspectRatio).round();
+
     final codec = await ui.instantiateImageCodec(
       markerData.buffer.asUint8List(),
-      targetWidth: (height * aspectRatio).round(),
-      targetHeight: height.round(),
+      targetWidth: targetPixelWidth,
+      targetHeight: targetPixelHeight,
     );
     final frame = await codec.getNextFrame();
     final byteData =
         await frame.image.toByteData(format: ui.ImageByteFormat.png);
     if (byteData == null) return BitmapDescriptor.defaultMarker;
 
-    final descriptor = BitmapDescriptor.bytes(byteData.buffer.asUint8List());
+    final descriptor = BitmapDescriptor.bytes(
+      byteData.buffer.asUint8List(),
+      // Explicit logical size keeps the on-screen marker the same size as
+      // before, regardless of how many real pixels back the bitmap.
+      width: height * aspectRatio,
+      height: height,
+    );
     _markerCache[key] = descriptor;
     return descriptor;
   }
